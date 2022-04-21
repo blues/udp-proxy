@@ -44,14 +44,14 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 		case ScanNotefile:
 			var data RadarScan
 			err = note.BodyToObject(e.Body, &data)
-			if err != nil {
+			if err == nil {
 				err = ingestScan(e.DeviceUID, data)
 			}
 
 		case TrackNotefile:
 			var data RadarTrack
 			err = note.BodyToObject(e.Body, &data)
-			if err != nil {
+			if err == nil {
 				err = ingestTrack(e.DeviceUID, data)
 			}
 
