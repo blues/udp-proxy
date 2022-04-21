@@ -8,9 +8,9 @@ package main
 import "fmt"
 
 // Ingest a contact
-func ingestContact(deviceUID string, deviceSN string, contactName string, contactAffiliation string, contactRole string, contactEmail string) (err error) {
+func ingestContact(when int64, deviceUID string, deviceSN string, contactName string, contactAffiliation string, contactRole string, contactEmail string) (err error) {
 
-	fmt.Printf("ingestContact: %s (%s) name:'%s' affiliation:'%s' role:'%s' email:'%s'\n", deviceUID, deviceSN, contactName, contactAffiliation, contactRole, contactEmail)
+	fmt.Printf("ingestContact: %s %d sn:'%s' name:'%s' affiliation:'%s' role:'%s' email:'%s'\n", deviceUID, when, deviceSN, contactName, contactAffiliation, contactRole, contactEmail)
 
 	return
 }

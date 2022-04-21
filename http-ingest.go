@@ -37,18 +37,6 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 		return
 	}
 
-	// Decompose the event into separately-ingestible data
-	if e.DeviceContact == nil {
-		e.DeviceContact = &note.EventContact{}
-	}
-	err = ingestContact(e.DeviceUID, e.DeviceSN,
-		e.DeviceContact.Name, e.DeviceContact.Affiliation, e.DeviceContact.Role, e.DeviceContact.Email)
-	if err != nil {
-		httpRsp.WriteHeader(http.StatusBadRequest)
-		httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
-		return
-	}
-
 	// Ingest different information depending upon notefile
 	if e.Body != nil {
 		switch e.NotefileID {
@@ -67,12 +55,30 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 				err = ingestTrack(e.DeviceUID, data)
 			}
 
+		default:
+			httpRsp.WriteHeader(http.StatusOK)
+			return
+
 		}
 	}
 	if err != nil {
 		httpRsp.WriteHeader(http.StatusBadRequest)
 		httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
 		return
+	}
+
+	// Assuming we ingested something, also ingest the contact
+	if e.When != 0 {
+		if e.DeviceContact == nil {
+			e.DeviceContact = &note.EventContact{}
+		}
+		err = ingestContact(e.When, e.DeviceUID, e.DeviceSN,
+			e.DeviceContact.Name, e.DeviceContact.Affiliation, e.DeviceContact.Role, e.DeviceContact.Email)
+		if err != nil {
+			httpRsp.WriteHeader(http.StatusBadRequest)
+			httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
+			return
+		}
 	}
 
 	// Write reply JSON
