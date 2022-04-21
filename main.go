@@ -21,7 +21,7 @@ func main() {
 	// Read creds
 	ServiceReadConfig()
 
-	// Compute folder location
+	// Compute data folder location
 	configDataDirectory = os.Getenv("HOME") + configDataDirectoryBase
 	_ = configDataDirectory
 
