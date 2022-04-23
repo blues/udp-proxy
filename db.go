@@ -184,6 +184,7 @@ func dbInit() (err error) {
 	var exists bool
 
 	// Open the db
+	fmt.Printf("db: opening database\n")
 	db, err := dbContext()
 	if err != nil {
 		return
@@ -194,11 +195,13 @@ func dbInit() (err error) {
 	defer dbLock.Unlock()
 
 	// Initialize the scan table
+	fmt.Printf("db: check scan table\n")
 	exists, err = uTableExists(db, tableScan)
 	if err != nil {
 		return
 	}
 	if !exists {
+		fmt.Printf("db: creating scan table\n")
 
 		// Create the scan table
 		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableScan)
@@ -272,11 +275,13 @@ func dbInit() (err error) {
 	}
 
 	// Initialize the track table
+	fmt.Printf("db: check track table\n")
 	exists, err = uTableExists(db, tableTrack)
 	if err != nil {
 		return
 	}
 	if !exists {
+		fmt.Printf("db: creating track table\n")
 
 		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableTrack)
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", trackFieldDbSerial, trackFieldDbSerialType)
@@ -328,11 +333,13 @@ func dbInit() (err error) {
 	}
 
 	// Initialize the contacts table
+	fmt.Printf("db: check contact table\n")
 	exists, err = uTableExists(db, tableContact)
 	if err != nil {
 		return
 	}
 	if !exists {
+		fmt.Printf("db: creating contact table\n")
 
 		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableContact)
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", contactFieldDbSerial, contactFieldDbSerialType)
@@ -373,6 +380,7 @@ func dbInit() (err error) {
 	}
 
 	// Done
+	fmt.Printf("db: initialization completed\n")
 	return
 
 }
