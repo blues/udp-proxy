@@ -393,6 +393,7 @@ func dbContext() (db *DbDesc, err error) {
 	if db.db != nil {
 		return
 	}
+	fmt.Printf("OZZIE 1\n")
 
 	// Lock, and check again
 	dbLock.Lock()
@@ -400,6 +401,7 @@ func dbContext() (db *DbDesc, err error) {
 		dbLock.Unlock()
 		return
 	}
+	fmt.Printf("OZZIE 2\n")
 
 	// Connect to the database
 	// Construct the metabase connection string
@@ -412,16 +414,21 @@ func dbContext() (db *DbDesc, err error) {
 	conn.WriteString("sslmode=disable")
 
 	// Open the database
+	fmt.Printf("OZZIE 3\n")
 	db.db, err = apmsql.Open("postgres", conn.String())
+	fmt.Printf("OZZIE 4\n")
 	if err != nil {
+		fmt.Printf("OZZIE 5\n")
 		db.db = nil
 		dbLock.Unlock()
 		return
 	}
 	dbLock.Unlock()
+	fmt.Printf("OZZIE 6\n")
 
 	// Make sure the connection is alive
 	err = db.Ping()
+	fmt.Printf("OZZIE 7\n")
 	if err != nil {
 		return
 	}
