@@ -424,11 +424,11 @@ func dbContext() (db *DbDesc, err error) {
 		return
 	}
 	dbLock.Unlock()
-	fmt.Printf("OZZIE 6\n")
+	fmt.Printf("OZZIE 6: %s\n", err)
 
 	// Make sure the connection is alive
 	err = db.Ping()
-	fmt.Printf("OZZIE 7\n")
+	fmt.Printf("OZZIE 7: %s\n", err)
 	if err != nil {
 		return
 	}
@@ -460,6 +460,7 @@ func (db *DbDesc) Ping() (err error) {
 		if err == nil {
 			break
 		}
+		fmt.Printf("OZZIE PING ERROR: %s\n", err)
 		if !strings.Contains(err.Error(), "connection refused") &&
 			!strings.Contains(err.Error(), "no such host") &&
 			!strings.Contains(err.Error(), "the database system is starting up") {
