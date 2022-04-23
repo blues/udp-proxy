@@ -452,10 +452,6 @@ func (db *DbDesc) Ping() (err error) {
 
 // uTableExists sees if a table exists
 func uTableExists(db *DbDesc, tableName string) (exists bool, err error) {
-
-	dbLock.Lock()
-	defer dbLock.Unlock()
-
 	var row string
 	query := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = '%s')", tableName)
 	err = db.db.QueryRow(query).Scan(&row)
