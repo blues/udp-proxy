@@ -444,15 +444,19 @@ func dbContext() (db *DbDesc, err error) {
 // times over 29 seconds before giving up.
 func (db *DbDesc) Ping() (err error) {
 
+	fmt.Printf("OZZIE PING 1\n")
 	dbLock.Lock()
 	defer dbLock.Unlock()
+	fmt.Printf("OZZIE PING 2\n")
 
 	maxTries := 30
 	for i := 0; i < maxTries; i++ {
+		fmt.Printf("OZZIE PING 3\n")
 		if i != 0 {
 			time.Sleep(1 * time.Second)
 		}
 		err = db.db.Ping()
+		fmt.Printf("OZZIE PING 4\n")
 		if err == nil {
 			break
 		}
@@ -462,6 +466,7 @@ func (db *DbDesc) Ping() (err error) {
 			break
 		}
 	}
+	fmt.Printf("OZZIE PING 5\n")
 	return
 }
 
