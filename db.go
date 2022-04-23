@@ -393,7 +393,6 @@ func dbContext() (db *DbDesc, err error) {
 	if db.db != nil {
 		return
 	}
-	fmt.Printf("OZZIE 1\n")
 
 	// Lock, and check again
 	dbLock.Lock()
@@ -401,7 +400,6 @@ func dbContext() (db *DbDesc, err error) {
 		dbLock.Unlock()
 		return
 	}
-	fmt.Printf("OZZIE 2\n")
 
 	// Connect to the database
 	// Construct the metabase connection string
@@ -412,23 +410,19 @@ func dbContext() (db *DbDesc, err error) {
 	conn.WriteString(fmt.Sprintf("password=%s ", Config.PostgresPassword))
 	conn.WriteString(fmt.Sprintf("dbname=%s ", Config.PostgresDatabase))
 	conn.WriteString("sslmode=disable")
+	fmt.Printf("OZZIE connect: %s\n", conn.String())
 
 	// Open the database
-	fmt.Printf("OZZIE 3\n")
 	db.db, err = apmsql.Open("postgres", conn.String())
-	fmt.Printf("OZZIE 4\n")
 	if err != nil {
-		fmt.Printf("OZZIE 5\n")
 		db.db = nil
 		dbLock.Unlock()
 		return
 	}
 	dbLock.Unlock()
-	fmt.Printf("OZZIE 6: %s\n", err)
 
 	// Make sure the connection is alive
 	err = db.Ping()
-	fmt.Printf("OZZIE 7: %s\n", err)
 	if err != nil {
 		return
 	}
@@ -444,30 +438,25 @@ func dbContext() (db *DbDesc, err error) {
 // times over 29 seconds before giving up.
 func (db *DbDesc) Ping() (err error) {
 
-	fmt.Printf("OZZIE PING 1\n")
 	dbLock.Lock()
 	defer dbLock.Unlock()
-	fmt.Printf("OZZIE PING 2\n")
 
 	maxTries := 30
 	for i := 0; i < maxTries; i++ {
-		fmt.Printf("OZZIE PING 3\n")
 		if i != 0 {
 			time.Sleep(1 * time.Second)
 		}
 		err = db.db.Ping()
-		fmt.Printf("OZZIE PING 4\n")
 		if err == nil {
 			break
 		}
-		fmt.Printf("OZZIE PING ERROR: %s\n", err)
 		if !strings.Contains(err.Error(), "connection refused") &&
 			!strings.Contains(err.Error(), "no such host") &&
 			!strings.Contains(err.Error(), "the database system is starting up") {
 			break
 		}
 	}
-	fmt.Printf("OZZIE PING 5\n")
+	fmt.Printf("db: ping error: %s\n", err)
 	return
 }
 
