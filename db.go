@@ -373,8 +373,8 @@ func dbContext() (db *DbDesc, err error) {
 
 	// Lock, and check again
 	dbLock.Lock()
-	defer dbLock.Unlock()
 	if db.db != nil {
+		dbLock.Unlock()
 		return
 	}
 
@@ -392,8 +392,10 @@ func dbContext() (db *DbDesc, err error) {
 	db.db, err = apmsql.Open("postgres", conn.String())
 	if err != nil {
 		db.db = nil
+		dbLock.Unlock()
 		return
 	}
+	dbLock.Unlock()
 
 	// Make sure the connection is alive
 	err = db.Ping()
