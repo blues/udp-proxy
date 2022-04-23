@@ -194,7 +194,7 @@ func dbInit() (err error) {
 	defer dbLock.Unlock()
 
 	// Initialize the scan table
-	exists, err = db.TableExists(tableScan)
+	exists, err = uTableExists(db, tableScan)
 	if err != nil {
 		return
 	}
@@ -269,8 +269,16 @@ func dbInit() (err error) {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldTime, err)
 		}
 
-		// Create the track table
-		query = fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableTrack)
+	}
+
+	// Initialize the track table
+	exists, err = uTableExists(db, tableTrack)
+	if err != nil {
+		return
+	}
+	if !exists {
+
+		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableTrack)
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", trackFieldDbSerial, trackFieldDbSerialType)
 
 		query += fmt.Sprintf("%s %s, \n", trackFieldSID, trackFieldSIDType)
@@ -317,9 +325,16 @@ func dbInit() (err error) {
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldTime, err)
 		}
+	}
 
-		// Create the contacts table
-		query = fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableContact)
+	// Initialize the contacts table
+	exists, err = uTableExists(db, tableContact)
+	if err != nil {
+		return
+	}
+	if !exists {
+
+		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableContact)
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", contactFieldDbSerial, contactFieldDbSerialType)
 		query += fmt.Sprintf("%s %s NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'), \n",
 			contactFieldDbModified, contactFieldDbModifiedType)
@@ -435,8 +450,8 @@ func (db *DbDesc) Ping() (err error) {
 	return
 }
 
-// dbTableExists sees if a table exists
-func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
+// uTableExists sees if a table exists
+func uTableExists(db *DbDesc, tableName string) (exists bool, err error) {
 
 	dbLock.Lock()
 	defer dbLock.Unlock()
@@ -454,7 +469,14 @@ func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
 	return
 }
 
-// DbDrop drops the table
+// TableExists sees if a table exists
+func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
+	dbLock.Lock()
+	defer dbLock.Unlock()
+	return uTableExists(db, tableName)
+}
+
+// Drop drops the table
 func (db *DbDesc) Drop(tableName string) (err error) {
 
 	dbLock.Lock()
