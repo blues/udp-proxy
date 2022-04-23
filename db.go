@@ -309,6 +309,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') \n",
 			trackFieldDbModified, trackFieldDbModifiedType)
 		query += "); \n"
+		fmt.Printf("///\n%s\n///\n", query)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s table creation error: %s", tableTrack, err)
@@ -410,7 +411,6 @@ func dbContext() (db *DbDesc, err error) {
 	conn.WriteString(fmt.Sprintf("password=%s ", Config.PostgresPassword))
 	conn.WriteString(fmt.Sprintf("dbname=%s ", Config.PostgresDatabase))
 	conn.WriteString("sslmode=disable")
-	fmt.Printf("OZZIE connect: %s\n", conn.String())
 
 	// Open the database
 	db.db, err = apmsql.Open("postgres", conn.String())
