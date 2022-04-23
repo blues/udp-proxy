@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 )
@@ -24,6 +25,13 @@ func main() {
 	// Compute data folder location
 	configDataDirectory = os.Getenv("HOME") + configDataDirectoryBase
 	_ = configDataDirectory
+
+	// Initialize subsystems
+	err := dbInit()
+	if err != nil {
+		fmt.Printf("db: %s\n", err)
+		os.Exit(-1)
+	}
 
 	// Spawn the console input handler
 	go inputHandler()

@@ -11,50 +11,15 @@ import (
 	"os"
 )
 
-// A monitored host and all data needed for it
-type MonitoredHost struct {
-	Disabled bool   `json:"disabled,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Addr     string `json:"address,omitempty"`
-}
-
 // ServiceConfig is the service configuration file format
 type ServiceConfig struct {
 
-	// Host URL
-	HostURL string `json:"host_url,omitempty"`
-
-	// Monitoring period
-	MonitorPeriodMins int `json:"monitor_mins,omitempty"`
-
-	// Monitored hosts
-	MonitoredHosts []MonitoredHost `json:"monitor,omitempty"`
-
-	// Twilio "from" phone number & email (addr & name)
-	TwilioSMS   string `json:"twilio_sms,omitempty"`
-	TwilioEmail string `json:"twilio_email,omitempty"`
-	TwilioFrom  string `json:"twilio_from,omitempty"`
-
-	// Twilio SID and Secret access key
-	TwilioSID string `json:"twilio_sid,omitempty"`
-	TwilioSAK string `json:"twilio_sak,omitempty"`
-
-	// Twilio Sendgrid API key
-	TwilioSendgridAPIKey string `json:"twilio_sendgrid_api_key,omitempty"`
-
-	// Slack app integration
-	SlackWebhookURL string `json:"slack_webhook_url,omitempty"`
-
-	// AWS info used for S3 upload
-	AWSRegion      string `json:"aws_region,omitempty"`
-	AWSAccessKeyID string `json:"aws_access_key_id,omitempty"`
-	AWSAccessKey   string `json:"aws_access_key,omitempty"`
-	AWSBucket      string `json:"aws_bucket,omitempty"`
-
-	// Datadog creds
-	DatadogSite   string `json:"datadog_site,omitempty"`
-	DatadogAppKey string `json:"datadog_app_key,omitempty"`
-	DatadogAPIKey string `json:"datadog_api_key,omitempty"`
+	// RDS Postgres
+	PostgresHost     string `json:"psql_host,omitempty"`
+	PostgresPort     int    `json:"psql_port,omitempty"`
+	PostgresDatabase string `json:"psql_db,omitempty"`
+	PostgresUsername string `json:"psql_username,omitempty"`
+	PostgresPassword string `json:"psql_password,omitempty"`
 }
 
 // ConfigPath (here for golint)

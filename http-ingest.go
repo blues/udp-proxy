@@ -72,7 +72,7 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 		if e.DeviceContact == nil {
 			e.DeviceContact = &note.EventContact{}
 		}
-		err = ingestContact(e.When, e.DeviceUID, e.DeviceSN,
+		err = ingestContact(e.DeviceUID, e.When, e.DeviceSN,
 			e.DeviceContact.Name, e.DeviceContact.Affiliation, e.DeviceContact.Role, e.DeviceContact.Email)
 		if err != nil {
 			httpRsp.WriteHeader(http.StatusBadRequest)
