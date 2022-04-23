@@ -309,7 +309,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') \n",
 			trackFieldDbModified, trackFieldDbModifiedType)
 		query += "); \n"
-		fmt.Printf("///\n%s\n///\n", query)
+
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s table creation error: %s", tableTrack, err)
@@ -493,8 +493,7 @@ func dbReset() (err error) {
 		uDrop(&radarDb, tableContact)
 	}
 	dbLock.Unlock()
-	_, err = dbContext()
-	return
+	return dbInit()
 }
 
 // Drop drops the table
