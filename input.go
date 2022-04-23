@@ -65,6 +65,14 @@ func inputHandler() {
 
 		switch arg0LC {
 
+		case "reset":
+			err := dbReset()
+			if err != nil {
+				fmt.Printf("db: reset error: %s\n", err)
+			} else {
+				fmt.Printf("db: reset successfully\n")
+			}
+
 		case "":
 
 		case "q":

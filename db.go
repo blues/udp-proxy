@@ -456,7 +456,9 @@ func (db *DbDesc) Ping() (err error) {
 			break
 		}
 	}
-	fmt.Printf("db: ping error: %s\n", err)
+	if err != nil {
+		fmt.Printf("db: ping error: %s\n", err)
+	}
 	return
 }
 
@@ -482,17 +484,25 @@ func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
 	return uTableExists(db, tableName)
 }
 
-// Drop drops the table
-func (db *DbDesc) Drop(tableName string) (err error) {
-
+// Reset the database
+func dbReset() (err error) {
 	dbLock.Lock()
-	defer dbLock.Unlock()
+	if radarDb.db != nil {
+		uDrop(&radarDb, tableScan)
+		uDrop(&radarDb, tableTrack)
+		uDrop(&radarDb, tableContact)
+	}
+	dbLock.Unlock()
+	_, err = dbContext()
+	return
+}
 
+// Drop drops the table
+func uDrop(db *DbDesc, tableName string) (err error) {
 	_, err = db.db.Exec(fmt.Sprintf("drop table \"%s\"", tableName))
 	if err != nil {
 		return
 	}
-
 	return
 }
 
