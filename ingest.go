@@ -16,7 +16,7 @@ func ingestContact(deviceUID string, when int64, deviceSN string, cName string, 
 	if contactCache == nil {
 		contactCache = map[string]string{}
 	}
-	prevValue, _ := contactCache[deviceUID]
+	prevValue := contactCache[deviceUID]
 	thisValue := deviceSN + ":" + cName + ":" + cAffiliation + ":" + cRole + ":" + cEmail
 	if prevValue == thisValue {
 		return

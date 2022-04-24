@@ -38,13 +38,16 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 	}
 
 	// Ingest different information depending upon notefile
-	if e.Body != nil {
+	if e.Body == nil {
+		fmt.Printf("ignoring %s %s event (no body)\n", e.DeviceUID, e.NotefileID)
+	} else {
 		switch e.NotefileID {
 
 		case ScanNotefile:
 			var data RadarScan
 			err = note.BodyToObject(e.Body, &data)
 			if err == nil {
+				fmt.Printf("ingesting %s %s event (body %d bytes)\n", e.DeviceUID, e.NotefileID, len(*e.Body))
 				err = ingestScan(e.DeviceUID, data)
 			}
 
@@ -52,16 +55,19 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 			var data RadarTrack
 			err = note.BodyToObject(e.Body, &data)
 			if err == nil {
+				fmt.Printf("ingesting %s %s event (body %d bytes)\n", e.DeviceUID, e.NotefileID, len(*e.Body))
 				err = ingestTrack(e.DeviceUID, data)
 			}
 
 		default:
+			fmt.Printf("ignoring %s %s event\n", e.DeviceUID, e.NotefileID)
 			httpRsp.WriteHeader(http.StatusOK)
 			return
 
 		}
 	}
 	if err != nil {
+		fmt.Printf("ingest: %s\n", err)
 		httpRsp.WriteHeader(http.StatusBadRequest)
 		httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
 		return
@@ -75,6 +81,7 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 		err = ingestContact(e.DeviceUID, e.When, e.DeviceSN,
 			e.DeviceContact.Name, e.DeviceContact.Affiliation, e.DeviceContact.Role, e.DeviceContact.Email)
 		if err != nil {
+			fmt.Printf("ingestContact: %s\n", err)
 			httpRsp.WriteHeader(http.StatusBadRequest)
 			httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
 			return
