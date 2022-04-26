@@ -744,7 +744,8 @@ func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 
 }
 
-// Read a named object from the DB.
+// Read a named object from the DB.  Note that it's up to the caller to make sure
+// that their object is blank before the Get, because fields will be 'merged' into it.
 func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 
 	// Get database context
@@ -774,9 +775,6 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 	if pvalue == nil {
 		return
 	}
-
-	// Initialize the return object to be blank
-	*(pvalue.(*map[string]interface{})) = map[string]interface{}{}
 
 	// Unmarshal into target object
 	err = note.JSONUnmarshal([]byte(valueStr), pvalue)
