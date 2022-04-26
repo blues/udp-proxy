@@ -923,8 +923,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 			fmt.Printf("MODIFIED ERR: %s\n", err)
 			return
 		}
-		var modified int64
-		modified = modifiedTime.UnixNano() / int64(time.Millisecond)
+		modified := modifiedTime.UnixNano() / int64(time.Millisecond)
 
 		// Call the callback
 		err = fn(state, deviceUID, modified, r)
