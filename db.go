@@ -757,6 +757,7 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 	// Read the object
 	query := fmt.Sprintf("SELECT %s FROM \"%s\" WHERE (%s = '%s') LIMIT 1", stateFieldValue, tableState, stateFieldKey, key)
 	var valueStr string
+	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
 	if err != nil {
 		err = fmt.Errorf("not found: %s", err)
@@ -804,6 +805,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 
 	// Do the update
 	query := fmt.Sprintf("UPDATE \"%s\" SET %s = '%s', %s = clock_timestamp() WHERE %s = '%s'", tableState, stateFieldValue, jsonString, stateFieldDbModified, stateFieldKey, key)
+	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(tableState, query)
 	if err != nil {
 		return err
@@ -866,6 +868,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += fmt.Sprintf(" LIMIT %d;", limit)
 
 	var rows *sql.Rows
+	fmt.Printf("OZZIE: %s\n", query)
 	rows, err = db.db.Query(tableScan, query)
 	if err != nil {
 		return
