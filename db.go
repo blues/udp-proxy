@@ -759,7 +759,8 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 	fmt.Printf("OZZIE: %s\n", err)
 
 	// Read the object
-	query := fmt.Sprintf("SELECT %s FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
+	//xx
+	query := fmt.Sprintf("SELECT (%s) FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
 	var valueStr string
 	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
