@@ -36,7 +36,10 @@ func main() {
 	// Spawn the console input handler
 	go inputHandler()
 
-	// Init our web request inbound server
+	// Spawn the Unwired exporter
+	go exportUnwired()
+
+	// Spawn the web request inbound server
 	go HTTPInboundHandler(":80")
 
 	// Housekeeping

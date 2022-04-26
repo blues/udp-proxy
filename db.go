@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blues/note-go/note"
 	"go.elastic.co/apm/module/apmsql"
 	_ "go.elastic.co/apm/module/apmsql/pq"
 )
@@ -37,6 +38,17 @@ const fieldZID = "zid"
 const fieldZIDType = "TEXT"
 const fieldTime = "time"
 const fieldTimeType = "INTEGER"
+
+// Processing state table params
+const tableState = "state"
+const stateFieldDbSerial = fieldDbSerial
+const stateFieldDbSerialType = fieldDbSerialType
+const stateFieldDbModified = fieldDbModified
+const stateFieldDbModifiedType = fieldDbModifiedType
+const stateFieldKey = "key"
+const stateFieldKeyType = "TEXT"
+const stateFieldValue = "value"
+const stateFieldValueType = "JSONB"
 
 // Scan table params
 const tableScan = "scan"
@@ -179,6 +191,9 @@ const contactFieldRoleType = "TEXT"
 const contactFieldEmail = "email"
 const contactFieldEmailType = "TEXT"
 
+// DB scan enumeration function
+type dbScanEnumFn func(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error)
+
 // Initialize the db subsystem and make sure the tables are created
 func dbInit() (err error) {
 	var exists bool
@@ -193,6 +208,32 @@ func dbInit() (err error) {
 	// Lock
 	dbLock.Lock()
 	defer dbLock.Unlock()
+
+	// Initialize the state table
+	fmt.Printf("db: check tate table\n")
+	exists, err = uTableExists(db, tableScan)
+	if err != nil {
+		return
+	}
+	if !exists {
+		fmt.Printf("db: creating state table\n")
+
+		// Create the state table
+		query := fmt.Sprintf("CREATE TABLE \"%s\" ( \n", tableState)
+		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", stateFieldDbSerial, stateFieldDbSerialType)
+
+		query += fmt.Sprintf("%s %s PRIMARY KEY, \n", stateFieldKey, stateFieldKeyType)
+		query += fmt.Sprintf("%s %s, \n", stateFieldValue, stateFieldValueType)
+
+		query += fmt.Sprintf("%s %s NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') \n",
+			stateFieldDbModified, stateFieldDbModifiedType)
+		query += "); \n"
+		_, err = db.db.Exec(query)
+		if err != nil {
+			return fmt.Errorf("%s table creation error: %s", tableState, err)
+		}
+
+	}
 
 	// Initialize the scan table
 	fmt.Printf("db: check scan table\n")
@@ -438,9 +479,6 @@ func dbContext() (db *DbDesc, err error) {
 // times over 29 seconds before giving up.
 func (db *DbDesc) Ping() (err error) {
 
-	dbLock.Lock()
-	defer dbLock.Unlock()
-
 	maxTries := 30
 	for i := 0; i < maxTries; i++ {
 		if i != 0 {
@@ -479,8 +517,6 @@ func uTableExists(db *DbDesc, tableName string) (exists bool, err error) {
 
 // TableExists sees if a table exists
 func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
-	dbLock.Lock()
-	defer dbLock.Unlock()
 	return uTableExists(db, tableName)
 }
 
@@ -488,6 +524,7 @@ func (db *DbDesc) TableExists(tableName string) (exists bool, err error) {
 func dbReset() (err error) {
 	dbLock.Lock()
 	if radarDb.db != nil {
+		uDrop(&radarDb, tableState)
 		uDrop(&radarDb, tableScan)
 		uDrop(&radarDb, tableTrack)
 		uDrop(&radarDb, tableContact)
@@ -530,8 +567,6 @@ func dbAddContact(deviceUID string, when int64, deviceSN string, contactName str
 	if err != nil {
 		return
 	}
-	dbLock.Lock()
-	defer dbLock.Unlock()
 
 	// Add or replace the contact
 	_, err = db.db.Exec(query)
@@ -624,8 +659,6 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	if err != nil {
 		return
 	}
-	dbLock.Lock()
-	defer dbLock.Unlock()
 
 	// Add the record
 	_, err = db.db.Exec(query)
@@ -698,8 +731,6 @@ func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 	if err != nil {
 		return
 	}
-	dbLock.Lock()
-	defer dbLock.Unlock()
 
 	// Add the record
 	_, err = db.db.Exec(query)
@@ -709,6 +740,207 @@ func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 
 	// Done
 	fmt.Printf("added track for %s\n", deviceUID)
+	return
+
+}
+
+// Read a named object from the DB.
+func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
+
+	// Get database context
+	var db *DbDesc
+	db, err = dbContext()
+	if err != nil {
+		return
+	}
+
+	// Read the object
+	query := fmt.Sprintf("SELECT %s FROM \"%s\" WHERE (%s = '%s') LIMIT 1", stateFieldValue, tableState, stateFieldKey, key)
+	var valueStr string
+	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
+	if err != nil {
+		err = fmt.Errorf("not found: %s", err)
+		return
+	}
+
+	// Just an exist check?
+	exists = true
+	if pvalue == nil {
+		return
+	}
+
+	// Initialize the return object to be blank
+	*(pvalue.(*map[string]interface{})) = map[string]interface{}{}
+
+	// Unmarshal into target object
+	err = note.JSONUnmarshal([]byte(valueStr), pvalue)
+	if err != nil {
+		return
+	}
+
+	// Done
+	return
+
+}
+
+// Set a named object in the db
+func dbSetObject(key string, pvalue interface{}) (err error) {
+
+	// Get database context
+	var db *DbDesc
+	db, err = dbContext()
+	if err != nil {
+		return
+	}
+
+	// Marshal the object into JSON
+	valueJSON, err := note.JSONMarshal(pvalue)
+	if err != nil {
+		return err
+	}
+
+	// Quote the single-quotes in the string because of SQL restrictions
+	jsonString := strings.Replace(string(valueJSON), "'", "''", -1)
+
+	// Do the update
+	query := fmt.Sprintf("UPDATE \"%s\" SET %s = '%s', %s = clock_timestamp() WHERE %s = '%s'", tableState, stateFieldValue, jsonString, stateFieldDbModified, stateFieldKey, key)
+	_, err = db.db.Exec(tableState, query)
+	if err != nil {
+		return err
+	}
+
+	// Done
+	return
+
+}
+
+// Enumerate scan records by modified time, with callback
+func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredState) (recs int, err error) {
+
+	// Get database context
+	var db *DbDesc
+	db, err = dbContext()
+	if err != nil {
+		return
+	}
+
+	// Read the object
+	query := "SELECT "
+	query += "EXTRACT (MILLISECONDS FROM " + scanFieldDbModified + "), \n"
+	query += scanFieldSID + ", \n"
+	query += scanFieldZID + ", \n"
+	query += scanFieldXID + ", \n"
+	query += scanFieldTime + ", \n"
+	query += scanFieldDuration + ", \n"
+	query += scanFieldDistance + ", \n"
+	query += scanFieldBearing + ", \n"
+	query += scanFieldBegan + ", \n"
+	query += scanFieldBeganLoc + ", \n"
+	query += scanFieldBeganLocHDOP + ", \n"
+	query += scanFieldBeganLocTime + ", \n"
+	query += scanFieldBeganMotionTime + ", \n"
+	query += scanFieldEnded + ", \n"
+	query += scanFieldEndedLoc + ", \n"
+	query += scanFieldEndedLocHDOP + ", \n"
+	query += scanFieldEndedLocTime + ", \n"
+	query += scanFieldEndedMotionTime + ", \n"
+	query += scanFieldDataRAT + ", \n"
+	query += scanFieldDataMCC + ", \n"
+	query += scanFieldDataMNC + ", \n"
+	query += scanFieldDataTAC + ", \n"
+	query += scanFieldDataCID + ", \n"
+	query += scanFieldDataPCI + ", \n"
+	query += scanFieldDataBAND + ", \n"
+	query += scanFieldDataCHAN + ", \n"
+	query += scanFieldDataFREQ + ", \n"
+	query += scanFieldDataBSSID + ", \n"
+	query += scanFieldDataPSC + ", \n"
+	query += scanFieldDataRSSI + ", \n"
+	query += scanFieldDataRSRP + ", \n"
+	query += scanFieldDataRSRQ + ", \n"
+	query += scanFieldDataRSCP + ", \n"
+	query += scanFieldDataSNR + ", \n"
+	query += scanFieldDataSSID + " FROM "
+	query += tableScan + " WHERE ( " + scanFieldDbModified + ">= "
+	query += "to_timestamp(" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "'"
+	query += fmt.Sprintf(" LIMIT %d;", limit)
+
+	var rows *sql.Rows
+	rows, err = db.db.Query(tableScan, query)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	// Extract the columns
+	for rows.Next() {
+		var r RadarScan
+		var modifiedStr, deviceUID string
+		err = rows.Scan(&modifiedStr,
+			&deviceUID,
+			&r.ScanFieldZID,
+			&r.ScanFieldXID,
+			&r.ScanFieldTime,
+			&r.ScanFieldDuration,
+			&r.ScanFieldDistance,
+			&r.ScanFieldBearing,
+			&r.ScanFieldBegan,
+			&r.ScanFieldBeganLoc,
+			&r.ScanFieldBeganLocHDOP,
+			&r.ScanFieldBeganLocTime,
+			&r.ScanFieldBeganMotionTime,
+			&r.ScanFieldEnded,
+			&r.ScanFieldEndedLoc,
+			&r.ScanFieldEndedLocHDOP,
+			&r.ScanFieldEndedLocTime,
+			&r.ScanFieldEndedMotionTime,
+			&r.ScanFieldDataRAT,
+			&r.ScanFieldDataMCC,
+			&r.ScanFieldDataMNC,
+			&r.ScanFieldDataTAC,
+			&r.ScanFieldDataCID,
+			&r.ScanFieldDataPCI,
+			&r.ScanFieldDataBAND,
+			&r.ScanFieldDataCHAN,
+			&r.ScanFieldDataFREQ,
+			&r.ScanFieldDataBSSID,
+			&r.ScanFieldDataPSC,
+			&r.ScanFieldDataRSSI,
+			&r.ScanFieldDataRSRP,
+			&r.ScanFieldDataRSRQ,
+			&r.ScanFieldDataRSCP,
+			&r.ScanFieldDataSNR,
+			&r.ScanFieldDataSSID)
+		if err != nil {
+			fmt.Printf("COLUMN ERR: %s\n", err)
+			return
+		}
+
+		// If we can't convert the modified time, we're in trouble
+		var modifiedTime time.Time
+		modifiedTime, err = time.Parse("2006-01-02 15:04:05.000", modifiedStr)
+		if err != nil {
+			fmt.Printf("MODIFIED ERR: %s\n", err)
+			return
+		}
+		var modified int64
+		modified = modifiedTime.UnixNano() / int64(time.Millisecond)
+
+		// Call the callback
+		err = fn(state, deviceUID, modified, r)
+		if err != nil {
+			fmt.Printf("CALLBACK ERR: %s\n", err)
+			return
+		}
+	}
+
+	// Check to see if there is a high level row enum error
+	err = rows.Err()
+	if err != nil {
+		fmt.Printf("ROWS ERR: %s\n", err)
+		return
+	}
+
 	return
 
 }
