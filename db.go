@@ -758,7 +758,6 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 	// Read the object
 	query := fmt.Sprintf("SELECT (%s) FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
 	var valueStr string
-	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(query).Scan(&valueStr)
 	if err != nil && strings.Contains(err.Error(), "no rows") {
 		nilValue := map[string]interface{}{}
@@ -808,10 +807,8 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 
 	// Do the update
 	query := fmt.Sprintf("INSERT INTO %s (%s,%s) VALUES ('%s','%s') ON CONFLICT (%s) DO UPDATE SET %s = EXCLUDED.%s", tableState, stateFieldKey, stateFieldValue, key, jsonString, stateFieldKey, stateFieldValue, stateFieldValue)
-	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(query)
 	if err != nil {
-		fmt.Printf("OZZIE: err? %s\n", err)
 		return err
 	}
 
@@ -872,7 +869,6 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += fmt.Sprintf(" LIMIT %d;", limit)
 
 	var rows *sql.Rows
-	fmt.Printf("OZZIE: %s\n", query)
 	rows, err = db.db.Query(query)
 	if err != nil {
 		return
