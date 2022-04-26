@@ -755,12 +755,9 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 		return
 	}
 
-	_, err = uTableExists(db, tableState) // OZZIE
-	fmt.Printf("OZZIE: %s\n", err)
-
 	// Read the object
-	//xx
 	query := fmt.Sprintf("SELECT (%s) FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
+	query = fmt.Sprintf("SELECT COUNT(*) FROM %s;", tableState)
 	var valueStr string
 	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
