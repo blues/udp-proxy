@@ -546,7 +546,7 @@ func uDrop(db *DbDesc, tableName string) (err error) {
 func dbAddContact(deviceUID string, when int64, deviceSN string, contactName string, contactAffiliation string, contactRole string, contactEmail string) (err error) {
 
 	// Generate the query that will replace or update the contact
-	query := fmt.Sprintf("REPLACE INTO %s (", tableContact)
+	query := fmt.Sprintf("INSERT INTO %s (", tableContact)
 	query += fmt.Sprintf("%s, ", contactFieldSID)
 	query += fmt.Sprintf("%s, ", contactFieldSN)
 	query += fmt.Sprintf("%s, ", contactFieldName)
@@ -560,7 +560,14 @@ func dbAddContact(deviceUID string, when int64, deviceSN string, contactName str
 	query += fmt.Sprintf("'%s', ", contactAffiliation)
 	query += fmt.Sprintf("'%s', ", contactRole)
 	query += fmt.Sprintf("'%s', ", contactEmail)
-	query += fmt.Sprintf("%d);", when)
+	query += fmt.Sprintf("%d) ON CONFLICT (", when)
+	query += fmt.Sprintf("%s, ", contactFieldSID)
+	query += fmt.Sprintf("%s, ", contactFieldSN)
+	query += fmt.Sprintf("%s, ", contactFieldName)
+	query += fmt.Sprintf("%s, ", contactFieldAffiliation)
+	query += fmt.Sprintf("%s, ", contactFieldRole)
+	query += fmt.Sprintf("%s) DO UPDATE SET ", contactFieldEmail)
+	query += fmt.Sprintf("%s = EXCLUDED.%s", contactFieldTime, contactFieldTime)
 
 	// Get DB context and lock
 	db, err := dbContext()
