@@ -834,7 +834,6 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 
 	// Read the object
 	query := "SELECT "
-	//	query += "EXTRACT (MILLISECONDS FROM " + scanFieldDbModified + "), "
 	query += scanFieldDbModified + ", "
 	query += scanFieldSID + ", "
 	query += scanFieldZID + ", "
@@ -931,7 +930,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 		modifiedTime, err = time.Parse("2006-01-02T15:04:05.000000Z", modifiedStr)
 		if err != nil {
 			fmt.Printf("MODIFIED ERR (%s): %s\n", modifiedStr, err)
-			//OZZIE			return
+			return
 		}
 		modified := modifiedTime.UnixNano() / int64(time.Millisecond)
 

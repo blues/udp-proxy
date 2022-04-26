@@ -20,7 +20,7 @@ type unwiredState struct {
 func unwiredExportScanRec(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error) {
 
 	// Simulate the export
-	fmt.Printf("EXPORT SCAN: %+v\n", r)
+	fmt.Printf("EXPORT SCAN: %s %d\n", deviceUID, recordModifiedMs)
 
 	// Update the modified MS under the assumption that these are enumerated in ASC sequence
 	state.LastModifiedMs = recordModifiedMs
