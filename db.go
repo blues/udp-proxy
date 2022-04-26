@@ -757,10 +757,9 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 
 	// Read the object
 	query := fmt.Sprintf("SELECT (%s) FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
-	query = fmt.Sprintf("SELECT COUNT(*) FROM %s;", tableState)
 	var valueStr string
 	fmt.Printf("OZZIE: %s\n", query)
-	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
+	err = db.db.QueryRow(query).Scan(&valueStr)
 	if err != nil {
 		err = fmt.Errorf("not found: %s", err)
 		return
@@ -808,7 +807,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 	// Do the update
 	query := fmt.Sprintf("REPLACE INTO \"%s\" SET %s = '%s', %s = clock_timestamp() WHERE %s = '%s'", tableState, stateFieldValue, jsonString, stateFieldDbModified, stateFieldKey, key)
 	fmt.Printf("OZZIE: %s\n", query)
-	_, err = db.db.Exec(tableState, query)
+	_, err = db.db.Exec(query)
 	if err != nil {
 		fmt.Printf("OZZIE: err? %s\n", err)
 		return err
@@ -872,7 +871,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 
 	var rows *sql.Rows
 	fmt.Printf("OZZIE: %s\n", query)
-	rows, err = db.db.Query(tableScan, query)
+	rows, err = db.db.Query(query)
 	if err != nil {
 		return
 	}
