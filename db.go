@@ -927,7 +927,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 
 		// If we can't convert the modified time, we're in trouble
 		var modifiedTime time.Time
-		modifiedTime, err = time.Parse("2006-01-02T15:04:05.000Z", modifiedStr)
+		modifiedTime, err = time.Parse("2006-01-02T15:04:05.999999Z", modifiedStr)
 		if err != nil {
 			fmt.Printf("MODIFIED ERR (%s): %s\n", modifiedStr, err)
 			return
