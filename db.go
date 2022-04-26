@@ -870,7 +870,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += scanFieldDataSNR + ", "
 	query += scanFieldDataSSID + " FROM \""
 	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " >= "
-	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "') )"
+	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS') )"
 	query += fmt.Sprintf(" LIMIT %d;", limit)
 
 	var rows *sql.Rows
