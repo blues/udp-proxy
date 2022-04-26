@@ -504,6 +504,7 @@ func (db *DbDesc) Ping() (err error) {
 func uTableExists(db *DbDesc, tableName string) (exists bool, err error) {
 	var row string
 	query := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = '%s')", tableName)
+	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(query).Scan(&row)
 	if err != nil {
 		return
@@ -754,9 +755,11 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 		return
 	}
 
+	_, err = uTableExists(db, tableState) // OZZIE
+	fmt.Printf("OZZIE: %s\n", err)
+
 	// Read the object
-	//	query := fmt.Sprintf("SELECT %s FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
-	query := fmt.Sprintf("SELECT * FROM %s;", tableState)
+	query := fmt.Sprintf("SELECT %s FROM \"%s\" WHERE (%s = '%s') LIMIT 1;", stateFieldValue, tableState, stateFieldKey, key)
 	var valueStr string
 	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(tableState, query).Scan(&valueStr)
