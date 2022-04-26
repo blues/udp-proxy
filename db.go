@@ -809,7 +809,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 	jsonString := strings.Replace(string(valueJSON), "'", "''", -1)
 
 	// Do the update
-	query := fmt.Sprintf("REPLACE INTO %s (%s, %s) VALUES ('%s', '%s');", tableState, stateFieldKey, stateFieldValue, key, jsonString)
+	query := fmt.Sprintf("REPLACE INTO \"%s\" (%s,%s) VALUES ('%s','%s')", tableState, stateFieldKey, stateFieldValue, key, jsonString)
 	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(query)
 	if err != nil {
@@ -834,7 +834,8 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 
 	// Read the object
 	query := "SELECT "
-	query += "EXTRACT (MILLISECONDS FROM " + scanFieldDbModified + "), "
+	//	query += "EXTRACT (MILLISECONDS FROM " + scanFieldDbModified + "), "
+	query += scanFieldDbModified + ", "
 	query += scanFieldSID + ", "
 	query += scanFieldZID + ", "
 	query += scanFieldXID + ", "
