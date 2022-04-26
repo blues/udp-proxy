@@ -210,8 +210,8 @@ func dbInit() (err error) {
 	defer dbLock.Unlock()
 
 	// Initialize the state table
-	fmt.Printf("db: check tate table\n")
-	exists, err = uTableExists(db, tableScan)
+	fmt.Printf("db: check state table\n")
+	exists, err = uTableExists(db, tableState)
 	if err != nil {
 		return
 	}
