@@ -809,7 +809,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 	jsonString := strings.Replace(string(valueJSON), "'", "''", -1)
 
 	// Do the update
-	query := fmt.Sprintf("INSERT INTO %s (%s,%s) VALUES ('%s','%s') ON CONFLICT %s DO UPDATE SET %s = EXCLUDED.%s", tableState, stateFieldKey, stateFieldValue, key, jsonString, stateFieldKey, stateFieldValue, stateFieldValue)
+	query := fmt.Sprintf("INSERT INTO %s (%s,%s) VALUES ('%s','%s') ON CONFLICT (%s) DO UPDATE SET %s = EXCLUDED.%s", tableState, stateFieldKey, stateFieldValue, key, jsonString, stateFieldKey, stateFieldValue, stateFieldValue)
 	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(query)
 	if err != nil {
