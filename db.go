@@ -504,7 +504,6 @@ func (db *DbDesc) Ping() (err error) {
 func uTableExists(db *DbDesc, tableName string) (exists bool, err error) {
 	var row string
 	query := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = '%s')", tableName)
-	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(query).Scan(&row)
 	if err != nil {
 		return
@@ -871,7 +870,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += scanFieldDataSNR + ", "
 	query += scanFieldDataSSID + " FROM \""
 	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " >= "
-	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "')"
+	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "') )"
 	query += fmt.Sprintf(" LIMIT %d;", limit)
 
 	var rows *sql.Rows
