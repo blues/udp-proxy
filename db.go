@@ -808,10 +808,11 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 	jsonString := strings.Replace(string(valueJSON), "'", "''", -1)
 
 	// Do the update
-	query := fmt.Sprintf("UPDATE \"%s\" SET %s = '%s', %s = clock_timestamp() WHERE %s = '%s'", tableState, stateFieldValue, jsonString, stateFieldDbModified, stateFieldKey, key)
+	query := fmt.Sprintf("REPLACE INTO \"%s\" SET %s = '%s', %s = clock_timestamp() WHERE %s = '%s'", tableState, stateFieldValue, jsonString, stateFieldDbModified, stateFieldKey, key)
 	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(tableState, query)
 	if err != nil {
+		fmt.Printf("OZZIE: err? %s\n", err)
 		return err
 	}
 
