@@ -37,7 +37,6 @@ func exportUnwired() {
 	var state unwiredState
 	_, err := dbGetObject(unwiredStateKey, &state)
 	if err != nil {
-		dbSetObject(unwiredStateKey, &state)
 		fmt.Printf("unwired: reading state object: %s\n", err)
 	}
 

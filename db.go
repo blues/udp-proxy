@@ -760,6 +760,11 @@ func dbGetObject(key string, pvalue interface{}) (exists bool, err error) {
 	var valueStr string
 	fmt.Printf("OZZIE: %s\n", query)
 	err = db.db.QueryRow(query).Scan(&valueStr)
+	if err != nil && strings.Contains(err.Error(), "no rows") {
+		nilValue := map[string]interface{}{}
+		dbSetObject(key, &nilValue)
+		err = db.db.QueryRow(query).Scan(&valueStr)
+	}
 	if err != nil {
 		err = fmt.Errorf("not found: %s", err)
 		return
