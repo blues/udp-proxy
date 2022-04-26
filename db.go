@@ -805,7 +805,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 	jsonString := strings.Replace(string(valueJSON), "'", "''", -1)
 
 	// Do the update
-	query := fmt.Sprintf("REPLACE INTO \"%s\" (%s, %s) VALUES (%s, %s);", tableState, stateFieldKey, stateFieldValue, key, jsonString)
+	query := fmt.Sprintf("REPLACE INTO %s (%s, %s) VALUES ('%s', '%s');", tableState, stateFieldKey, stateFieldValue, key, jsonString)
 	fmt.Printf("OZZIE: %s\n", query)
 	_, err = db.db.Exec(query)
 	if err != nil {
