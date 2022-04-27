@@ -28,6 +28,7 @@ func exportUnwired() {
 
 	// Go into a perpetual loop, exporting state
 	for {
+		fmt.Printf("unwired: processing any new records after %d\n", state.LastModifiedMs)
 
 		// Do a query to find some number of the records since last time we did an export
 		var recs int
