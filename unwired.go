@@ -16,20 +16,6 @@ type unwiredState struct {
 	LastModifiedMs int64 `json:"last_modified_ms,omitempty"`
 }
 
-// Export a single record
-func unwiredExportScanRec(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error) {
-
-	// Simulate the export
-	fmt.Printf("EXPORT SCAN: %s %d\n", deviceUID, recordModifiedMs)
-
-	// Update the modified MS under the assumption that these are enumerated in ASC sequence
-	state.LastModifiedMs = recordModifiedMs
-
-	// Success
-	return
-
-}
-
 // Unwired Labs exporter task
 func exportUnwired() {
 
@@ -71,5 +57,22 @@ func exportUnwired() {
 		time.Sleep(120 * time.Second)
 
 	}
+
+}
+
+// Export a single record
+func unwiredExportScanRec(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error) {
+
+	fmt.Printf("EXPORT SCAN: %s %d\n", deviceUID, recordModifiedMs)
+
+	// Begin to formulate an item
+	var item ulItem
+	item.TimestampMs = recordModifiedMs
+
+	// Update the modified MS under the assumption that these are enumerated in ASC sequence
+	state.LastModifiedMs = recordModifiedMs
+
+	// Success
+	return
 
 }

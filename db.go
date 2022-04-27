@@ -871,7 +871,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += scanFieldDataRSCP + ", "
 	query += scanFieldDataSNR + ", "
 	query += scanFieldDataSSID + " FROM \""
-	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " >= "
+	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " > "
 	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS') )"
 	query += fmt.Sprintf(" LIMIT %d;", limit)
 
@@ -922,7 +922,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 			&r.ScanFieldDataSNR,
 			&r.ScanFieldDataSSID)
 		if err != nil {
-			fmt.Printf("COLUMN ERR: %s\n", err)
+			fmt.Printf("enumRecs: column err: %s\n", err)
 			return
 		}
 
@@ -930,7 +930,7 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 		var modifiedTime time.Time
 		modifiedTime, err = time.Parse("2006-01-02T15:04:05.999999Z", modifiedStr)
 		if err != nil {
-			fmt.Printf("MODIFIED ERR (%s): %s\n", modifiedStr, err)
+			fmt.Printf("enumRecs: timestamp parsing: (%s): %s\n", modifiedStr, err)
 			return
 		}
 		modified := modifiedTime.UnixNano() / int64(time.Millisecond)
@@ -938,9 +938,13 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 		// Call the callback
 		err = fn(state, deviceUID, modified, r)
 		if err != nil {
-			fmt.Printf("CALLBACK ERR: %s\n", err)
+			fmt.Printf("enumRecs: processing error: %s\n", err)
 			return
 		}
+
+		// Bump the number of records processed
+		recs++
+
 	}
 
 	// Check to see if there is a high level row enum error
