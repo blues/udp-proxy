@@ -33,7 +33,7 @@ func exportUnwired() {
 
 	// Go into a perpetual loop, exporting state
 	for {
-		fmt.Printf("unwired: processing any new records after %d\n", state.LastModifiedMs)
+		fmt.Printf("unwired: looking for new records after %d\n", state.LastModifiedMs)
 
 		// Do a query to find some number of the records since last time we did an export
 		var recs int
@@ -61,7 +61,7 @@ func exportUnwired() {
 
 		// Wait for a more substantial amount of time before trying again
 		if recs == 0 {
-			fmt.Printf("unwired: no more events to process\n")
+			fmt.Printf("unwired: no more records to process\n")
 			scanRecsAvailable.Wait(120 * time.Second)
 		}
 
@@ -79,9 +79,16 @@ func unwiredExportScanRec(state *unwiredState, deviceUID string, recordModifiedM
 
 	fmt.Printf("EXPORT SCAN: %s %d\n", deviceUID, recordModifiedMs)
 
-	// Begin to formulate an item
+	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem
-	item.TimestampMs = recordModifiedMs
+	item.TimestampMs = (r.ScanFieldBegan + (r.ScanFieldDuration / 2)) * 1000
+	item.Position.Latitude, item.Position.Longitude = gpsMidpointFromOLC(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
+	distanceMeters := olcDistanceMeters(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
+	if r.ScanFieldDuration != 0 && distanceMeters != 0 {
+		item.Position.AccuracyMeters = distanceMeters / 2
+		item.Position.SpeedMetersPerSec = distanceMeters / float64(r.ScanFieldDuration)
+		item.Position.HeadingDeg = olcInitialBearing(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
+	}
 
 	// Update the modified MS under the assumption that these are enumerated in ASC sequence
 	state.LastModifiedMs = recordModifiedMs

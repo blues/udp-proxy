@@ -30,14 +30,7 @@ func ingestContact(deviceUID string, when int64, deviceSN string, cName string, 
 
 // Ingest a scan entry
 func ingestScan(deviceUID string, scan RadarScan) (err error) {
-
-	// Ingest the scan entry
 	err = dbAddScan(deviceUID, scan)
-
-	// Signal to the unwired task that events may be ready
-	unwiredEventsReady()
-
-	// Done
 	return
 
 }

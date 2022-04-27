@@ -292,25 +292,25 @@ func dbInit() (err error) {
 		}
 
 		// Create the scan table indexes
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldSID, tableScan, tableScan, scanFieldSID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldSID, tableScan, tableScan, scanFieldSID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldZID, tableScan, tableScan, scanFieldZID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldZID, tableScan, tableScan, scanFieldZID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldZID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldXID, tableScan, tableScan, scanFieldXID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldXID, tableScan, tableScan, scanFieldXID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldXID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldTime, tableScan, tableScan, scanFieldTime)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldTime, tableScan, tableScan, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldTime, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldDbModified, err)
 		}
 
 	}
@@ -357,20 +357,20 @@ func dbInit() (err error) {
 		}
 
 		// Create the track table indexes
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldSID, tableTrack, tableTrack, trackFieldSID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldSID, tableTrack, tableTrack, trackFieldSID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldZID, tableTrack, tableTrack, trackFieldZID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldZID, tableTrack, tableTrack, trackFieldZID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldZID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldTime, tableTrack, tableTrack, trackFieldTime)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldTime, tableTrack, tableTrack, trackFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldTime, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldDbModified, err)
 		}
 	}
 
@@ -408,15 +408,15 @@ func dbInit() (err error) {
 		}
 
 		// Create the track table indexes
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", contactFieldSID, tableContact, tableContact, contactFieldSID)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", contactFieldSID, tableContact, tableContact, contactFieldSID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableContact, trackFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", contactFieldTime, tableContact, tableContact, contactFieldTime)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", contactFieldTime, tableContact, tableContact, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableContact, trackFieldTime, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableContact, scanFieldDbModified, err)
 		}
 
 	}
