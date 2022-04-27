@@ -31,7 +31,7 @@ func exportUnwired() {
 
 		// Do a query to find some number of the records since last time we did an export
 		var recs int
-		recs, err = dbEnumNewScanRecs(state.LastModifiedMs, 100, unwiredExportScanRec, &state)
+		recs, err = dbEnumNewScanRecs(state.LastModifiedMs, 25, unwiredExportScanRec, &state)
 		if err != nil {
 			fmt.Printf("unwired: error processing records: %s\n", err)
 		}
