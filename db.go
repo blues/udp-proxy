@@ -933,10 +933,18 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 			fmt.Printf("enumRecs: timestamp parsing: (%s): %s\n", modifiedStr, err)
 			return
 		}
-		modified := modifiedTime.UnixNano() / int64(time.Millisecond)
+		modifiedMs := modifiedTime.UnixNano() / int64(time.Millisecond)
+
+		// Skip the record if the modified time is exactly what we passed in.  This
+		// can happen because in NANOSECONDS the time that we passed-in will
+		// end up in 000000, but the record internally may actually have fractional
+		// nanoseconds such as 000001.
+		if modifiedMs == fromMs {
+			continue
+		}
 
 		// Call the callback
-		err = fn(state, deviceUID, modified, r)
+		err = fn(state, deviceUID, modifiedMs, r)
 		if err != nil {
 			fmt.Printf("enumRecs: processing error: %s\n", err)
 			return
