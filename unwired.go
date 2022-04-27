@@ -54,7 +54,9 @@ func exportUnwired() {
 		}
 
 		// Wait for a more substantial amount of time before trying again
-		time.Sleep(120 * time.Second)
+		if recs == 0 {
+			time.Sleep(120 * time.Second)
+		}
 
 	}
 
