@@ -16,8 +16,13 @@ type unwiredState struct {
 	LastModifiedMs int64 `json:"last_modified_ms,omitempty"`
 }
 
+var scanRecsAvailable *Event
+
 // Unwired Labs exporter task
 func exportUnwired() {
+
+	// Initialize our event
+	scanRecsAvailable = EventNew()
 
 	// Read the state
 	var state unwiredState
@@ -56,11 +61,17 @@ func exportUnwired() {
 
 		// Wait for a more substantial amount of time before trying again
 		if recs == 0 {
-			time.Sleep(120 * time.Second)
+			fmt.Printf("unwired: no more events to process\n")
+			scanRecsAvailable.Wait(120 * time.Second)
 		}
 
 	}
 
+}
+
+// Signal that there are events ready
+func unwiredEventsReady() {
+	scanRecsAvailable.Signal()
 }
 
 // Export a single record

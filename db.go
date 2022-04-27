@@ -582,7 +582,6 @@ func dbAddContact(deviceUID string, when int64, deviceSN string, contactName str
 	}
 
 	// Done
-	fmt.Printf("added contact for %s\n", deviceUID)
 	return
 
 }
@@ -674,7 +673,6 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	}
 
 	// Done
-	fmt.Printf("added scan for %s\n", deviceUID)
 	return
 }
 
@@ -746,7 +744,6 @@ func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 	}
 
 	// Done
-	fmt.Printf("added track for %s\n", deviceUID)
 	return
 
 }
