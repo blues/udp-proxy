@@ -25,18 +25,28 @@ func ingestContact(deviceUID string, when int64, deviceSN string, cName string, 
 
 	// Add the contact
 	err = dbAddContact(deviceUID, when, deviceSN, cName, cAffiliation, cRole, cEmail)
+
 	return
 }
 
 // Ingest a scan entry
 func ingestScan(deviceUID string, scan RadarScan) (err error) {
+
+	// Add the scan to the DB
 	err = dbAddScan(deviceUID, scan)
+
+	// Signal that some scan items are ready
+	unwiredScanEventsReady()
+
 	return
 
 }
 
 // Ingest a track entry
 func ingestTrack(deviceUID string, track RadarTrack) (err error) {
+
+	// Add the track to the DB
 	err = dbAddTrack(deviceUID, track)
+
 	return
 }

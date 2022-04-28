@@ -6,30 +6,21 @@
 package main
 
 // Scan formats
-const ScanTypeGSM = "g"      // FORMAT_2G
-const ScanTypeCDMA = "c"     // FORMAT_2G
-const ScanTypeUMTS = "u"     // FORMAT_3G
-const ScanTypeWCDMA = "w"    // FORMAT_3G
-const ScanTypeLTE = "l"      // FORMAT_4G
-const ScanTypeEMTC = "e"     // FORMAT_4G
-const ScanTypeNBIOT = "i"    // FORMAT_4G
-const ScanTypeNR = "n"       // FORMAT_5G
-const ScanTypeWIFI = "x"     // FORMAT_WIFI
-const ScanTypeCELLTIME = "t" // FORMAT_TIME
-const ScanTypeWIFITIME = "s" // FORMAT_TIME
-const ScanTypeGPS = "d"      // FORMAT_GPS
-const ScanFormat2G = "xmcc,xmnc,xlac,xcid,xrssi"
-const ScanFormat3G = "xmcc,xmnc,xlac,xcid,xpsc,xrscp"
-const ScanFormat4G = "xmcc,xmnc,xtac,xcid,xpci,rssi,rsrp,rsrq,xband,xchan"
-const ScanFormat5G = "xmcc,xmnc,xtac,xcid,xpci,rssi,rsrp,rsrq,xband,xchan"
-const ScanFormatWIFI = "xbssid,xchannel,xfreq,rssi,snr,\"ssid\""
-const ScanFormatTIME = "epochsecs"
-const ScanFormatGPS = "epochsecs,olc,hdop"
+const ScanRatGSM = "gsm"
+const ScanRatCDMA = "cdma"
+const ScanRatUMTS = "umts"
+const ScanRatWCDMA = "wcdma"
+const ScanRatLTE = "lte"
+const ScanRatEMTC = "emtc"
+const ScanRatNBIOT = "nbiot"
+const ScanRatNR = "nr"
+const ScanRatWIFI = "wifi"
 
 // Body of the notes to be enqueued to the service for scanning
 const ScanNotefile = "scan.qo"
 
 type RadarScan struct {
+	ScanFieldSID             string  `json:"sid,omitempty"`
 	ScanFieldZID             string  `json:"zid,omitempty"`
 	ScanFieldXID             string  `json:"xid,omitempty"`
 	ScanFieldTime            int64   `json:"time,omitempty"`

@@ -191,9 +191,6 @@ const contactFieldRoleType = "TEXT"
 const contactFieldEmail = "email"
 const contactFieldEmailType = "TEXT"
 
-// DB scan enumeration function
-type dbScanEnumFn func(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error)
-
 // Initialize the db subsystem and make sure the tables are created
 func dbInit() (err error) {
 	var exists bool
@@ -821,8 +818,10 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 
 }
 
-// Enumerate scan records by modified time, with callback
-func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredState) (recs int, err error) {
+// Enumerate scan records by modified time range
+// Note for posterity that this is a useful way to locate the tiles WITHOUT the records
+//	select distinct on (zid) zid, db_modified from scan where db_modified > '2022-04-27 15:20:00.000'
+func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error) {
 
 	// Get database context
 	var db *DbDesc
@@ -868,9 +867,14 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	query += scanFieldDataRSCP + ", "
 	query += scanFieldDataSNR + ", "
 	query += scanFieldDataSSID + " FROM \""
-	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " > "
-	query += "to_timestamp('" + time.UnixMilli(fromMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS') )"
-	query += fmt.Sprintf(" LIMIT %d;", limit)
+	query += tableScan + "\" WHERE ( (" + scanFieldDbModified + " > "
+	query += "to_timestamp('" + time.UnixMilli(sinceMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS')"
+	query += tableScan + " ) AND ( " + scanFieldDbModified + " <= "
+	query += "to_timestamp('" + time.UnixMilli(untilMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS')"
+	query += " );"
+	fmt.Printf("// OZZIE //\n")
+	fmt.Printf("%s\n", query)
+	fmt.Printf("// OZZIE //\n")
 
 	var rows *sql.Rows
 	rows, err = db.db.Query(query)
@@ -882,9 +886,9 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 	// Extract the columns
 	for rows.Next() {
 		var r RadarScan
-		var modifiedStr, deviceUID string
+		var modifiedStr string
 		err = rows.Scan(&modifiedStr,
-			&deviceUID,
+			&r.ScanFieldSID,
 			&r.ScanFieldZID,
 			&r.ScanFieldXID,
 			&r.ScanFieldTime,
@@ -936,19 +940,12 @@ func dbEnumNewScanRecs(fromMs int64, limit int, fn dbScanEnumFn, state *unwiredS
 		// can happen because in NANOSECONDS the time that we passed-in will
 		// end up in 000000, but the record internally may actually have fractional
 		// nanoseconds such as 000001.
-		if modifiedMs == fromMs {
+		if modifiedMs == sinceMs {
 			continue
 		}
 
-		// Call the callback
-		err = fn(state, deviceUID, modifiedMs, r)
-		if err != nil {
-			fmt.Printf("enumRecs: processing error: %s\n", err)
-			return
-		}
-
-		// Bump the number of records processed
-		recs++
+		// Append the record
+		recs = append(recs, r)
 
 	}
 

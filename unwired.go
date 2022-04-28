@@ -7,9 +7,13 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"time"
+
+	"github.com/blues/note-go/note"
 )
 
+// Constants & statics
 const unwiredStateKey = "unwired"
 
 type unwiredState struct {
@@ -33,36 +37,49 @@ func exportUnwired() {
 
 	// Go into a perpetual loop, exporting state
 	for {
-		fmt.Printf("unwired: looking for new records after %d\n", state.LastModifiedMs)
+
+		//
+		since := state.LastModifiedMs
+		until := time.Now().UTC().UnixNano() / 1000000
+
+		fmt.Printf("unwired: looking for new records from %d - %d\n", since, until)
 
 		// Do a query to find some number of the records since last time we did an export
-		var recs int
-		recs, err = dbEnumNewScanRecs(state.LastModifiedMs, 25, unwiredExportScanRec, &state)
+		var recs []RadarScan
+		recs, err = dbGetChangedRecs(since, until)
 		if err != nil {
 			fmt.Printf("unwired: error processing records: %s\n", err)
 		}
-		if recs > 0 {
 
-			// Success
-			fmt.Printf("unwired: processed %d records\n", recs)
+		// Process the records
+		if len(recs) > 0 {
 
-			// If any recs were added, update state
-			err = dbSetObject(unwiredStateKey, &state)
+			err = exportRecs(recs)
 			if err != nil {
-				fmt.Printf("unwired: updating state object: %s\n", err)
+				fmt.Printf("unwired: error exporting records: %s\n", err)
 			} else {
-
-				// Sleep a little just to be sociable, and loop to process more
-				time.Sleep(10 * time.Second)
-				continue
+				// Save state so we don't read the same records again
+				fmt.Printf("unwired: processed %d records\n", len(recs))
+				state.LastModifiedMs = until
+				err = dbSetObject(unwiredStateKey, &state)
+				if err != nil {
+					fmt.Printf("unwired: updating state object: %s\n", err)
+				}
 			}
 
-		}
+		} else {
 
-		// Wait for a more substantial amount of time before trying again
-		if recs == 0 {
 			fmt.Printf("unwired: no more records to process\n")
-			scanRecsAvailable.Wait(120 * time.Second)
+
+			// Wait until some device says that data is available to be aggregated
+			scanRecsAvailable.Wait(24 * time.Hour)
+
+			// We are awakened here by the first event streaming in from a device.  Because events
+			// stream in groups, wait a moment before aggregating.  This has a positive secondary
+			// benefit in that if many devices are pounding us, we naturally take a small breather
+			// so we are not constantly querying the database for changes.
+			time.Sleep(15 * time.Second)
+
 		}
 
 	}
@@ -70,30 +87,169 @@ func exportUnwired() {
 }
 
 // Signal that there are events ready
-func unwiredEventsReady() {
+func unwiredScanEventsReady() {
 	scanRecsAvailable.Signal()
 }
 
-// Export a single record
-func unwiredExportScanRec(state *unwiredState, deviceUID string, recordModifiedMs int64, r RadarScan) (err error) {
+// Export the records that have changed
+func exportRecs(r []RadarScan) (err error) {
 
-	fmt.Printf("EXPORT SCAN: %s %d\n", deviceUID, recordModifiedMs)
+	fmt.Printf("exportRecs: %d records\n", len(r))
+
+	// Sort the records based on the scan that was performed.  By doing this, we can use the
+	// begin/end/duration/etc for the first record for all of them, so we know what to aggregate.
+	sort.Slice(r, func(i, j int) bool {
+
+		// Primamry key is tile ID
+		if r[i].ScanFieldZID != r[j].ScanFieldZID {
+			return r[i].ScanFieldZID < r[j].ScanFieldZID
+		}
+
+		// Secondary key is source ID
+		if r[i].ScanFieldSID != r[j].ScanFieldSID {
+			return r[i].ScanFieldSID < r[j].ScanFieldSID
+		}
+
+		// Tertiary key is when the scan began
+		return r[i].ScanFieldBegan < r[j].ScanFieldBegan
+
+	})
+
+	// Iterate over the records, dividing them up into aggregateable sets that were done by the
+	// same source in the same tile
+	i := 0
+	recsRemaining := len(r)
+	for recsRemaining > 0 {
+
+		count := 0
+		for j := 0; r[i].ScanFieldSID == r[j].ScanFieldSID && r[i].ScanFieldZID == r[j].ScanFieldZID && r[i].ScanFieldBegan == r[j].ScanFieldBegan; count++ {
+		}
+
+		err = exportScan(r[i : i+count])
+		if err != nil {
+			fmt.Printf("exportTileRecs: %s\n", err)
+		}
+
+		i += count
+		recsRemaining -= count
+
+	}
+
+	// Success
+	fmt.Printf("exportRecs: done exporting %d records\n", len(r))
+	return
+
+}
+
+// Export records from within a single source within a single tile
+func exportScan(r []RadarScan) (err error) {
+
+	// Defensive, because we reference [0]
+	if len(r) == 0 {
+		return
+	}
+
+	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldZID)
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem
-	item.TimestampMs = (r.ScanFieldBegan + (r.ScanFieldDuration / 2)) * 1000
-	item.Position.Latitude, item.Position.Longitude = gpsMidpointFromOLC(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
-	distanceMeters := olcDistanceMeters(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
-	if r.ScanFieldDuration != 0 && distanceMeters != 0 {
+	item.TimestampMs = (r[0].ScanFieldBegan + (r[0].ScanFieldDuration / 2)) * 1000
+	item.Position.Latitude, item.Position.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+	distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+	if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
 		item.Position.AccuracyMeters = distanceMeters / 2
-		item.Position.SpeedMetersPerSec = distanceMeters / float64(r.ScanFieldDuration)
-		item.Position.HeadingDeg = olcInitialBearing(r.ScanFieldBeganLoc, r.ScanFieldEndedLoc)
+		item.Position.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
+		item.Position.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 	}
 
-	// Update the modified MS under the assumption that these are enumerated in ASC sequence
-	state.LastModifiedMs = recordModifiedMs
+	// Append the records from the various tiles
+	for _, rec := range r {
+		var c ulCell
+		var w ulWiFi
 
-	// Success
+		switch rec.ScanFieldDataRAT {
+		case ScanRatGSM:
+			c.Radio = ulRadioGSM
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatCDMA:
+			c.Radio = ulRadioCDMA
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatUMTS:
+			c.Radio = ulRadioUMTS
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatWCDMA:
+			c.Radio = ulRadioCDMA
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatLTE:
+			c.Radio = ulRadioLTE
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatEMTC:
+			c.Radio = ulRadioLTE
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatNBIOT:
+			c.Radio = ulRadioNBIOT
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatNR:
+			c.Radio = ulRadioNR
+			c.MCC = int(rec.ScanFieldDataMCC)
+			c.MNC = int(rec.ScanFieldDataMNC)
+			c.LAC = int(rec.ScanFieldDataTAC)
+			c.CID = int(rec.ScanFieldDataCID)
+			c.Signal = int(rec.ScanFieldDataRSSI)
+		case ScanRatWIFI:
+			w.BSSID = rec.ScanFieldDataBSSID // xx:xx:xx:xx:xx:xx
+			w.SSID = rec.ScanFieldDataSSID
+			w.Channel = int(rec.ScanFieldDataCHAN)
+			w.Frequency = int(rec.ScanFieldDataFREQ)
+			w.Signal = int(rec.ScanFieldDataRSSI)
+			w.SNR = int(rec.ScanFieldDataSNR)
+		}
+
+		if c.Radio != "" {
+			item.Cells = append(item.Cells, c)
+		}
+		if w.BSSID != "" {
+			item.WiFi = append(item.WiFi, w)
+		}
+
+	}
+
+	// Marshal
+	var ulJSON []byte
+	ulJSON, err = note.JSONMarshal(item)
+
+	// Trace
+	fmt.Printf("%s\n", string(ulJSON))
+
+	// Done
 	return
 
 }
