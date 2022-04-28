@@ -122,7 +122,7 @@ func exportRecs(r []RadarScan) (err error) {
 	for recsRemaining > 0 {
 
 		count := 0
-		for j := 0; r[i].ScanFieldSID == r[j].ScanFieldSID && r[i].ScanFieldZID == r[j].ScanFieldZID && r[i].ScanFieldBegan == r[j].ScanFieldBegan; j++ {
+		for j := 0; r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldZID == r[i+j].ScanFieldZID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
 			count++
 		}
 
