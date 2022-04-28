@@ -867,9 +867,9 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 	query += scanFieldDataRSCP + ", "
 	query += scanFieldDataSNR + ", "
 	query += scanFieldDataSSID + " FROM \""
-	query += tableScan + "\" WHERE ( (" + scanFieldDbModified + " > "
+	query += tableScan + "\" WHERE ( " + scanFieldDbModified + " > "
 	query += "to_timestamp('" + time.UnixMilli(sinceMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS')"
-	query += " ) AND ( " + scanFieldDbModified + " <= "
+	query += " AND " + scanFieldDbModified + " <= "
 	query += "to_timestamp('" + time.UnixMilli(untilMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS')"
 	query += " );"
 	fmt.Printf("// OZZIE //\n")
