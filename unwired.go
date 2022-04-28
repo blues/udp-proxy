@@ -120,7 +120,6 @@ func exportRecs(r []RadarScan) (err error) {
 	i := 0
 	recsRemaining := len(r)
 	for recsRemaining > 0 {
-		fmt.Printf("OZZIE begin: i:%d remaining:%d\n", i, recsRemaining)
 
 		count := 0
 		for j := 0; recsRemaining > 0 && r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldZID == r[i+j].ScanFieldZID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
@@ -134,7 +133,6 @@ func exportRecs(r []RadarScan) (err error) {
 		}
 
 		i += count
-		fmt.Printf("OZZIE end: i:%d remaining:%d\n", i, recsRemaining)
 
 	}
 
@@ -247,7 +245,7 @@ func exportScan(r []RadarScan) (err error) {
 
 	// Marshal
 	var ulJSON []byte
-	ulJSON, err = note.JSONMarshal(item)
+	ulJSON, err = note.JSONMarshalIndent(item, "", "    ")
 
 	// Trace
 	fmt.Printf("%s\n", string(ulJSON))
