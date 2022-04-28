@@ -872,9 +872,6 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 	query += " AND " + scanFieldDbModified + " <= "
 	query += "to_timestamp('" + time.UnixMilli(untilMs).Format("2006-01-02 15:04:05.000") + "', 'YYYY-MM-DD HH24:MI:SS.MS')"
 	query += " );"
-	fmt.Printf("// OZZIE //\n")
-	fmt.Printf("%s\n", query)
-	fmt.Printf("// OZZIE //\n")
 
 	var rows *sql.Rows
 	rows, err = db.db.Query(query)
@@ -923,7 +920,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 			&r.ScanFieldDataSNR,
 			&r.ScanFieldDataSSID)
 		if err != nil {
-			fmt.Printf("enumRecs: column err: %s\n", err)
+			fmt.Printf("getChangedRecs: column err: %s\n", err)
 			return
 		}
 
@@ -931,7 +928,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 		var modifiedTime time.Time
 		modifiedTime, err = time.Parse("2006-01-02T15:04:05.999999Z", modifiedStr)
 		if err != nil {
-			fmt.Printf("enumRecs: timestamp parsing: (%s): %s\n", modifiedStr, err)
+			fmt.Printf("getChangedRecs: timestamp parsing: (%s): %s\n", modifiedStr, err)
 			return
 		}
 		modifiedMs := modifiedTime.UnixNano() / int64(time.Millisecond)
@@ -952,7 +949,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 	// Check to see if there is a high level row enum error
 	err = rows.Err()
 	if err != nil {
-		fmt.Printf("ROWS ERR: %s\n", err)
+		fmt.Printf("getChangedRecs: rows error: %s\n", err)
 		return
 	}
 
