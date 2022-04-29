@@ -47,7 +47,6 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 			var data RadarScan
 			err = note.BodyToObject(e.Body, &data)
 			if err == nil {
-				fmt.Printf("ingesting %s %s event (body %d bytes)\n", e.DeviceUID, e.NotefileID, len(*e.Body))
 				err = ingestScan(e.DeviceUID, data)
 			}
 
@@ -55,7 +54,6 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 			var data RadarTrack
 			err = note.BodyToObject(e.Body, &data)
 			if err == nil {
-				fmt.Printf("ingesting %s %s event (body %d bytes)\n", e.DeviceUID, e.NotefileID, len(*e.Body))
 				err = ingestTrack(e.DeviceUID, data)
 			}
 
@@ -81,7 +79,6 @@ func inboundWebIngestHandler(httpRsp http.ResponseWriter, httpReq *http.Request)
 		err = ingestContact(e.DeviceUID, e.When, e.DeviceSN,
 			e.DeviceContact.Name, e.DeviceContact.Affiliation, e.DeviceContact.Role, e.DeviceContact.Email)
 		if err != nil {
-			fmt.Printf("ingestContact: %s\n", err)
 			httpRsp.WriteHeader(http.StatusBadRequest)
 			httpRsp.Write([]byte(fmt.Sprintf("{\"err\":\"%s\"}", err)))
 			return

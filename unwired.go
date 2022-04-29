@@ -203,6 +203,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
+			c.PCI = int(rec.ScanFieldDataPCI)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatEMTC:
 			c.Radio = ulRadioLTE
@@ -210,6 +211,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
+			c.PCI = int(rec.ScanFieldDataPCI)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNBIOT:
 			c.Radio = ulRadioNBIOT
@@ -217,6 +219,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
+			c.PCI = int(rec.ScanFieldDataPCI)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNR:
 			c.Radio = ulRadioNR
@@ -224,6 +227,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
+			c.PCI = int(rec.ScanFieldDataPCI)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatWIFI:
 			w.BSSID = rec.ScanFieldDataBSSID // xx:xx:xx:xx:xx:xx

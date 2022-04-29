@@ -39,6 +39,7 @@ type ulCell struct {
 	MNC     int    `json:"mnc,omitempty"`
 	LAC     int    `json:"lac,omitempty"`
 	CID     int    `json:"cid,omitempty"`
+	PCI     int    `json:"pci,omitempty"`
 	Serving int    `json:"serving,omitempty"`
 	Signal  int    `json:"signal,omitempty"`
 }
