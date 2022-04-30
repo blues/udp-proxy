@@ -154,14 +154,21 @@ func exportScan(r []RadarScan) (err error) {
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem
-	item.TimestampMs = (r[0].ScanFieldBegan + (r[0].ScanFieldDuration / 2)) * 1000
-	item.Position.Latitude, item.Position.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+	item.Token = "<token>"
+	timestampMs := (r[0].ScanFieldBegan + (r[0].ScanFieldDuration / 2)) * 1000
+
+	// Add GPS array
+	var pos ulPosition
+	pos.Source = ulPositionSourceGPS
+	pos.Timestamp = timestampMs
+	pos.Latitude, pos.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 	distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 	if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
-		item.Position.AccuracyMeters = distanceMeters / 2
-		item.Position.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
-		item.Position.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+		pos.AccuracyMeters = distanceMeters / 2
+		pos.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
+		pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 	}
+	item.GPS = append(item.GPS, pos)
 
 	// Append the records from the various tiles
 	for _, rec := range r {
@@ -171,6 +178,7 @@ func exportScan(r []RadarScan) (err error) {
 		switch rec.ScanFieldDataRAT {
 		case ScanRatGSM:
 			c.Radio = ulRadioGSM
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -178,6 +186,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatCDMA:
 			c.Radio = ulRadioCDMA
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -185,6 +194,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatUMTS:
 			c.Radio = ulRadioUMTS
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -192,6 +202,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatWCDMA:
 			c.Radio = ulRadioCDMA
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -199,38 +210,51 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatLTE:
 			c.Radio = ulRadioLTE
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
 			c.PCI = int(rec.ScanFieldDataPCI)
+			c.Band = int(rec.ScanFieldDataBAND)
+			c.Channel = int(rec.ScanFieldDataCHAN)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatEMTC:
 			c.Radio = ulRadioLTE
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
 			c.PCI = int(rec.ScanFieldDataPCI)
+			c.Band = int(rec.ScanFieldDataBAND)
+			c.Channel = int(rec.ScanFieldDataCHAN)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNBIOT:
 			c.Radio = ulRadioNBIOT
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
 			c.PCI = int(rec.ScanFieldDataPCI)
+			c.Band = int(rec.ScanFieldDataBAND)
+			c.Channel = int(rec.ScanFieldDataCHAN)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNR:
 			c.Radio = ulRadioNR
+			c.Timestamp = timestampMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
 			c.CID = int(rec.ScanFieldDataCID)
 			c.PCI = int(rec.ScanFieldDataPCI)
+			c.Band = int(rec.ScanFieldDataBAND)
+			c.Channel = int(rec.ScanFieldDataCHAN)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatWIFI:
-			w.BSSID = rec.ScanFieldDataBSSID // xx:xx:xx:xx:xx:xx
+			w.Timestamp = timestampMs
+			w.BSSID = rec.ScanFieldDataBSSID
 			w.SSID = rec.ScanFieldDataSSID
 			w.Channel = int(rec.ScanFieldDataCHAN)
 			w.Frequency = int(rec.ScanFieldDataFREQ)
