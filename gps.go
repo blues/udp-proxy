@@ -43,7 +43,7 @@ func olcFromGPS(lat float64, lon float64, precision int) (loc string) {
 
 func olcDistanceMeters(loc1 string, loc2 string) (distanceMeters float64) {
 	lat1, lon1 := gpsFromOLC(loc1)
-	lat2, lon2 := gpsFromOLC(loc1)
+	lat2, lon2 := gpsFromOLC(loc2)
 	distanceMeters = gpsDistanceMeters(lat1, lon1, lat2, lon2)
 	return
 }
@@ -63,7 +63,7 @@ func gpsDistanceMeters(lat1 float64, lon1 float64, lat2 float64, lon2 float64) (
 
 func olcInitialBearing(loc1 string, loc2 string) (bearingDegrees float64) {
 	lat1, lon1 := gpsFromOLC(loc1)
-	lat2, lon2 := gpsFromOLC(loc1)
+	lat2, lon2 := gpsFromOLC(loc2)
 	bearingDegrees = gpsInitialBearing(lat1, lon1, lat2, lon2)
 	return
 }
@@ -81,7 +81,7 @@ func gpsInitialBearing(lat1 float64, lon1 float64, lat2 float64, lon2 float64) (
 
 func gpsMidpointFromOLC(loc1 string, loc2 string) (lat3 float64, lon3 float64) {
 	lat1, lon1 := gpsFromOLC(loc1)
-	lat2, lon2 := gpsFromOLC(loc1)
+	lat2, lon2 := gpsFromOLC(loc2)
 	lat3, lon3 = gpsMidpoint(lat1, lon1, lat2, lon2)
 	return
 }

@@ -171,8 +171,6 @@ func exportScan(r []RadarScan) (err error) {
 			pos.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
 			pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 		}
-		fmt.Printf("OZZIE: %+v\n", r[0])
-		fmt.Printf("OZZIE: distance:%f %+v\n", distanceMeters, pos)
 	}
 	item.GPS = append(item.GPS, pos)
 
