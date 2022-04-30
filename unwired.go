@@ -161,12 +161,16 @@ func exportScan(r []RadarScan) (err error) {
 	var pos ulPosition
 	pos.Source = ulPositionSourceGPS
 	pos.Timestamp = timestampMs
-	pos.Latitude, pos.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
-	distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
-	if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
-		pos.AccuracyMeters = distanceMeters / 2
-		pos.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
-		pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+	if r[0].ScanFieldEndedLoc == "" {
+		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldBeganLoc)
+	} else {
+		pos.Latitude, pos.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+		distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+		if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
+			pos.AccuracyMeters = distanceMeters / 2
+			pos.SpeedMetersPerSec = distanceMeters / float64(r[0].ScanFieldDuration)
+			pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+		}
 	}
 	item.GPS = append(item.GPS, pos)
 
