@@ -155,16 +155,12 @@ func exportScan(r []RadarScan) (err error) {
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem
 	item.Token = "<token>"
-	timestampMs := (r[0].ScanFieldBegan + (r[0].ScanFieldDuration / 2)) * 1000
+	timestampMidpointMs := (r[0].ScanFieldBegan + (r[0].ScanFieldDuration / 2)) * 1000
 
 	// Add GPS array
 	var pos ulPosition
 	pos.Source = ulPositionSourceGPS
-	pos.Timestamp = timestampMs
-	if r[0].ScanFieldEndedLoc == "" {
-		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldBeganLoc)
-	} else {
-		pos.Latitude, pos.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+	if r[0].ScanFieldEndedLoc != "" {
 		distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 		if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
 			pos.AccuracyMeters = distanceMeters / 2
@@ -172,7 +168,21 @@ func exportScan(r []RadarScan) (err error) {
 			pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 		}
 	}
-	item.GPS = append(item.GPS, pos)
+	if r[0].ScanFieldEndedLoc == "" {
+		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldBeganLoc)
+		pos.Timestamp = r[0].ScanFieldBegan * 1000
+		item.GPS = append(item.GPS, pos)
+	} else {
+		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldBeganLoc)
+		pos.Timestamp = r[0].ScanFieldBegan * 1000
+		item.GPS = append(item.GPS, pos)
+		pos.Latitude, pos.Longitude = gpsMidpointFromOLC(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
+		pos.Timestamp = timestampMidpointMs
+		item.GPS = append(item.GPS, pos)
+		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldEndedLoc)
+		pos.Timestamp = r[0].ScanFieldEnded * 1000
+		item.GPS = append(item.GPS, pos)
+	}
 
 	// Append the records from the various tiles
 	for _, rec := range r {
@@ -182,7 +192,7 @@ func exportScan(r []RadarScan) (err error) {
 		switch rec.ScanFieldDataRAT {
 		case ScanRatGSM:
 			c.Radio = ulRadioGSM
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -190,7 +200,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatCDMA:
 			c.Radio = ulRadioCDMA
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -198,7 +208,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatUMTS:
 			c.Radio = ulRadioUMTS
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -206,7 +216,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatWCDMA:
 			c.Radio = ulRadioCDMA
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -214,7 +224,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatLTE:
 			c.Radio = ulRadioLTE
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -225,7 +235,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatEMTC:
 			c.Radio = ulRadioLTE
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -236,7 +246,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNBIOT:
 			c.Radio = ulRadioNBIOT
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -247,7 +257,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatNR:
 			c.Radio = ulRadioNR
-			c.Timestamp = timestampMs
+			c.Timestamp = timestampMidpointMs
 			c.MCC = int(rec.ScanFieldDataMCC)
 			c.MNC = int(rec.ScanFieldDataMNC)
 			c.LAC = int(rec.ScanFieldDataTAC)
@@ -257,7 +267,7 @@ func exportScan(r []RadarScan) (err error) {
 			c.Channel = int(rec.ScanFieldDataCHAN)
 			c.Signal = int(rec.ScanFieldDataRSSI)
 		case ScanRatWIFI:
-			w.Timestamp = timestampMs
+			w.Timestamp = timestampMidpointMs
 			w.BSSID = rec.ScanFieldDataBSSID
 			w.SSID = rec.ScanFieldDataSSID
 			w.Channel = int(rec.ScanFieldDataCHAN)
