@@ -21,7 +21,7 @@ const ScanNotefile = "scan.qo"
 
 type RadarScan struct {
 	ScanFieldSID             string  `json:"sid,omitempty"`
-	ScanFieldZID             string  `json:"zid,omitempty"`
+	ScanFieldTID             string  `json:"tid,omitempty"`
 	ScanFieldXID             string  `json:"xid,omitempty"`
 	ScanFieldTime            int64   `json:"time,omitempty"`
 	ScanFieldDuration        int64   `json:"duration,omitempty"`

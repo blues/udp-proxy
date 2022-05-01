@@ -101,8 +101,8 @@ func exportRecs(r []RadarScan) (err error) {
 	sort.Slice(r, func(i, j int) bool {
 
 		// Primamry key is tile ID
-		if r[i].ScanFieldZID != r[j].ScanFieldZID {
-			return r[i].ScanFieldZID < r[j].ScanFieldZID
+		if r[i].ScanFieldTID != r[j].ScanFieldTID {
+			return r[i].ScanFieldTID < r[j].ScanFieldTID
 		}
 
 		// Secondary key is source ID
@@ -122,7 +122,7 @@ func exportRecs(r []RadarScan) (err error) {
 	for recsRemaining > 0 {
 
 		count := 0
-		for j := 0; recsRemaining > 0 && r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldZID == r[i+j].ScanFieldZID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
+		for j := 0; recsRemaining > 0 && r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldTID == r[i+j].ScanFieldTID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
 			count++
 			recsRemaining--
 		}
@@ -150,7 +150,7 @@ func exportScan(r []RadarScan) (err error) {
 		return
 	}
 
-	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldZID)
+	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldTID)
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem

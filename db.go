@@ -34,8 +34,8 @@ const fieldDbModified = "db_modified"
 const fieldDbModifiedType = "TIMESTAMP WITHOUT TIME ZONE"
 const fieldSID = "sid"
 const fieldSIDType = "TEXT"
-const fieldZID = "zid"
-const fieldZIDType = "TEXT"
+const fieldTID = "tid"
+const fieldTIDType = "TEXT"
 const fieldTime = "time"
 const fieldTimeType = "INTEGER"
 
@@ -58,8 +58,8 @@ const scanFieldDbModified = fieldDbModified
 const scanFieldDbModifiedType = fieldDbModifiedType
 const scanFieldSID = fieldSID
 const scanFieldSIDType = fieldSIDType
-const scanFieldZID = fieldZID
-const scanFieldZIDType = fieldZIDType
+const scanFieldTID = fieldTID
+const scanFieldTIDType = fieldTIDType
 const scanFieldXID = "xid"
 const scanFieldXIDType = "TEXT"
 const scanFieldTime = fieldTime
@@ -133,8 +133,8 @@ const trackFieldDbModified = fieldDbModified
 const trackFieldDbModifiedType = fieldDbModifiedType
 const trackFieldSID = fieldSID
 const trackFieldSIDType = fieldSIDType
-const trackFieldZID = fieldZID
-const trackFieldZIDType = fieldZIDType
+const trackFieldTID = fieldTID
+const trackFieldTIDType = fieldTIDType
 const trackFieldTime = "added"
 const trackFieldTimeType = "INTEGER"
 const trackFieldLoc = "loc"
@@ -246,7 +246,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", scanFieldDbSerial, scanFieldDbSerialType)
 
 		query += fmt.Sprintf("%s %s, \n", scanFieldSID, scanFieldSIDType)
-		query += fmt.Sprintf("%s %s, \n", scanFieldZID, scanFieldZIDType)
+		query += fmt.Sprintf("%s %s, \n", scanFieldTID, scanFieldTIDType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldXID, scanFieldXIDType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldTime, scanFieldTimeType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldDuration, scanFieldDurationType)
@@ -294,10 +294,10 @@ func dbInit() (err error) {
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldZID, tableScan, tableScan, scanFieldZID, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldTID, tableScan, tableScan, scanFieldTID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldZID, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldTID, err)
 		}
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldXID, tableScan, tableScan, scanFieldXID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
@@ -325,7 +325,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", trackFieldDbSerial, trackFieldDbSerialType)
 
 		query += fmt.Sprintf("%s %s, \n", trackFieldSID, trackFieldSIDType)
-		query += fmt.Sprintf("%s %s, \n", trackFieldZID, trackFieldZIDType)
+		query += fmt.Sprintf("%s %s, \n", trackFieldTID, trackFieldTIDType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldTime, trackFieldTimeType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldLoc, trackFieldLocType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldLocTime, trackFieldLocTimeType)
@@ -359,10 +359,10 @@ func dbInit() (err error) {
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldZID, tableTrack, tableTrack, trackFieldZID, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldTID, tableTrack, tableTrack, trackFieldTID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldZID, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldTID, err)
 		}
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldTime, tableTrack, tableTrack, trackFieldDbModified)
 		_, err = db.db.Exec(query)
@@ -589,7 +589,7 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	// Generate the query that will replace or update the contact
 	query := fmt.Sprintf("INSERT INTO %s (", tableScan)
 	query += fmt.Sprintf("%s, ", scanFieldSID)
-	query += fmt.Sprintf("%s, ", scanFieldZID)
+	query += fmt.Sprintf("%s, ", scanFieldTID)
 	query += fmt.Sprintf("%s, ", scanFieldXID)
 	query += fmt.Sprintf("%s, ", scanFieldTime)
 	query += fmt.Sprintf("%s, ", scanFieldDuration)
@@ -623,7 +623,7 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	query += fmt.Sprintf("%s, ", scanFieldDataSNR)
 	query += fmt.Sprintf("%s) VALUES (", scanFieldDataSSID)
 	query += fmt.Sprintf("'%s', ", deviceUID)
-	query += fmt.Sprintf("'%s', ", scan.ScanFieldZID)
+	query += fmt.Sprintf("'%s', ", scan.ScanFieldTID)
 	query += fmt.Sprintf("'%s', ", scan.ScanFieldXID)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldTime)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldDuration)
@@ -820,7 +820,7 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 
 // Enumerate scan records by modified time range
 // Note for posterity that this is a useful way to locate the tiles WITHOUT the records
-//	select distinct on (zid) zid, db_modified from scan where db_modified > '2022-04-27 15:20:00.000'
+//	select distinct on (tid) tid, db_modified from scan where db_modified > '2022-04-27 15:20:00.000'
 func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error) {
 
 	// Get database context
@@ -834,7 +834,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 	query := "SELECT "
 	query += scanFieldDbModified + ", "
 	query += scanFieldSID + ", "
-	query += scanFieldZID + ", "
+	query += scanFieldTID + ", "
 	query += scanFieldXID + ", "
 	query += scanFieldTime + ", "
 	query += scanFieldDuration + ", "
@@ -886,7 +886,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 		var modifiedStr string
 		err = rows.Scan(&modifiedStr,
 			&r.ScanFieldSID,
-			&r.ScanFieldZID,
+			&r.ScanFieldTID,
 			&r.ScanFieldXID,
 			&r.ScanFieldTime,
 			&r.ScanFieldDuration,
