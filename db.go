@@ -289,22 +289,30 @@ func dbInit() (err error) {
 		}
 
 		// Create the scan table indexes
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldSID, tableScan, tableScan, scanFieldSID, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableScan, scanFieldSID, scanFieldDbModified,
+			tableScan, scanFieldSID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldTID, tableScan, tableScan, scanFieldTID, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableScan, scanFieldTID, scanFieldDbModified,
+			tableScan, scanFieldTID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldTID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", scanFieldXID, tableScan, tableScan, scanFieldXID, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableScan, scanFieldXID, scanFieldDbModified,
+			tableScan, scanFieldXID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldXID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", scanFieldTime, tableScan, tableScan, scanFieldDbModified)
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );",
+			tableScan, scanFieldDbModified,
+			tableScan, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldDbModified, err)
@@ -353,18 +361,34 @@ func dbInit() (err error) {
 			return fmt.Errorf("%s table creation error: %s", tableTrack, err)
 		}
 
-		// Create the track table indexes
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldSID, tableTrack, tableTrack, trackFieldSID, scanFieldDbModified)
+		// Create the track table index "by source, by when"
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableTrack, trackFieldSID, scanFieldDbModified,
+			tableTrack, trackFieldSID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldSID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC, %s ASC );", trackFieldTID, tableTrack, tableTrack, trackFieldTID, scanFieldDbModified)
+		// Create the track table index "by source, by journey, by jcount"
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s_%s ON %s ( %s ASC, %s ASC, %s ASC );",
+			tableTrack, trackFieldSID, trackFieldJourneyTime, trackFieldJourneyCount,
+			tableTrack, trackFieldSID, trackFieldJourneyTime, trackFieldJourneyCount)
+		_, err = db.db.Exec(query)
+		if err != nil {
+			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldSID, err)
+		}
+		// Create the track table index "by tile, by when"
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableTrack, trackFieldTID, scanFieldDbModified,
+			tableTrack, trackFieldTID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldTID, err)
 		}
-		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );", trackFieldTime, tableTrack, tableTrack, trackFieldDbModified)
+		// Create the track table index "by modified"
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );",
+			tableTrack, trackFieldDbModified,
+			tableTrack, trackFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldDbModified, err)
