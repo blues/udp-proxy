@@ -45,7 +45,7 @@ func exportUnwired() {
 		fmt.Printf("unwired: looking for new records from %d - %d\n", since, until)
 
 		// Do a query to find some number of the records since last time we did an export
-		var recs []RadarScan
+		var recs []DbScan
 		recs, err = dbGetChangedRecs(since, until)
 		if err != nil {
 			fmt.Printf("unwired: error processing records: %s\n", err)
@@ -92,7 +92,7 @@ func unwiredScanEventsReady() {
 }
 
 // Export the records that have changed
-func exportRecs(r []RadarScan) (err error) {
+func exportRecs(r []DbScan) (err error) {
 
 	fmt.Printf("exportRecs: %d records\n", len(r))
 
@@ -100,9 +100,9 @@ func exportRecs(r []RadarScan) (err error) {
 	// begin/end/duration/etc for the first record for all of them, so we know what to aggregate.
 	sort.Slice(r, func(i, j int) bool {
 
-		// Primamry key is tile ID
-		if r[i].ScanFieldTID != r[j].ScanFieldTID {
-			return r[i].ScanFieldTID < r[j].ScanFieldTID
+		// Primamry key is cell ID
+		if r[i].ScanFieldCID != r[j].ScanFieldCID {
+			return r[i].ScanFieldCID < r[j].ScanFieldCID
 		}
 
 		// Secondary key is source ID
@@ -116,20 +116,20 @@ func exportRecs(r []RadarScan) (err error) {
 	})
 
 	// Iterate over the records, dividing them up into aggregateable sets that were done by the
-	// same source in the same tile
+	// same source in the same cell
 	i := 0
 	recsRemaining := len(r)
 	for recsRemaining > 0 {
 
 		count := 0
-		for j := 0; recsRemaining > 0 && r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldTID == r[i+j].ScanFieldTID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
+		for j := 0; recsRemaining > 0 && r[i].ScanFieldSID == r[i+j].ScanFieldSID && r[i].ScanFieldCID == r[i+j].ScanFieldCID && r[i].ScanFieldBegan == r[i+j].ScanFieldBegan; j++ {
 			count++
 			recsRemaining--
 		}
 
 		err = exportScan(r[i : i+count])
 		if err != nil {
-			fmt.Printf("exportTileRecs: %s\n", err)
+			fmt.Printf("exportRecs: %s\n", err)
 		}
 
 		i += count
@@ -142,15 +142,15 @@ func exportRecs(r []RadarScan) (err error) {
 
 }
 
-// Export records from within a single source within a single tile
-func exportScan(r []RadarScan) (err error) {
+// Export records from within a single source within a single cell
+func exportScan(r []DbScan) (err error) {
 
 	// Defensive, because we reference [0]
 	if len(r) == 0 {
 		return
 	}
 
-	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldTID)
+	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldCID)
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
 	var item ulItem
@@ -184,7 +184,7 @@ func exportScan(r []RadarScan) (err error) {
 		item.GPS = append(item.GPS, pos)
 	}
 
-	// Append the records from the various tiles
+	// Append the records from the various cells
 	for _, rec := range r {
 		var c ulCell
 		var w ulWiFi

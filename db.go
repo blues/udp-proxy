@@ -34,8 +34,8 @@ const fieldDbModified = "db_modified"
 const fieldDbModifiedType = "TIMESTAMP WITHOUT TIME ZONE"
 const fieldSID = "sid"
 const fieldSIDType = "TEXT"
-const fieldTID = "tid"
-const fieldTIDType = "TEXT"
+const fieldCID = "cell"
+const fieldCIDType = "TEXT"
 const fieldTime = "time"
 const fieldTimeType = "BIGINT"
 
@@ -58,8 +58,8 @@ const scanFieldDbModified = fieldDbModified
 const scanFieldDbModifiedType = fieldDbModifiedType
 const scanFieldSID = fieldSID
 const scanFieldSIDType = fieldSIDType
-const scanFieldTID = fieldTID
-const scanFieldTIDType = fieldTIDType
+const scanFieldCID = fieldCID
+const scanFieldCIDType = fieldCIDType
 const scanFieldXID = "xid"
 const scanFieldXIDType = "TEXT"
 const scanFieldTime = fieldTime
@@ -133,8 +133,8 @@ const trackFieldDbModified = fieldDbModified
 const trackFieldDbModifiedType = fieldDbModifiedType
 const trackFieldSID = fieldSID
 const trackFieldSIDType = fieldSIDType
-const trackFieldTID = fieldTID
-const trackFieldTIDType = fieldTIDType
+const trackFieldCID = fieldCID
+const trackFieldCIDType = fieldCIDType
 const trackFieldTime = "added"
 const trackFieldTimeType = fieldTimeType
 const trackFieldLoc = "loc"
@@ -191,6 +191,18 @@ const contactFieldRoleType = "TEXT"
 const contactFieldEmail = "email"
 const contactFieldEmailType = "TEXT"
 
+// DbScan is a version of RadarScan stored in the database
+type DbScan struct {
+	RadarScan
+	ScanFieldCID string `json:"cell,omitempty"`
+}
+
+// DbTrack is a version of RadarTrack stored in the database
+type DbTrack struct {
+	RadarTrack
+	ScanFieldCID string `json:"cell,omitempty"`
+}
+
 // Initialize the db subsystem and make sure the tables are created
 func dbInit() (err error) {
 	var exists bool
@@ -246,7 +258,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", scanFieldDbSerial, scanFieldDbSerialType)
 
 		query += fmt.Sprintf("%s %s, \n", scanFieldSID, scanFieldSIDType)
-		query += fmt.Sprintf("%s %s, \n", scanFieldTID, scanFieldTIDType)
+		query += fmt.Sprintf("%s %s, \n", scanFieldCID, scanFieldCIDType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldXID, scanFieldXIDType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldTime, scanFieldTimeType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldDuration, scanFieldDurationType)
@@ -297,11 +309,11 @@ func dbInit() (err error) {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldSID, err)
 		}
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
-			tableScan, scanFieldTID, scanFieldDbModified,
-			tableScan, scanFieldTID, scanFieldDbModified)
+			tableScan, scanFieldCID, scanFieldDbModified,
+			tableScan, scanFieldCID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldTID, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldCID, err)
 		}
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
 			tableScan, scanFieldXID, scanFieldDbModified,
@@ -333,7 +345,7 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s NOT NULL UNIQUE, \n", trackFieldDbSerial, trackFieldDbSerialType)
 
 		query += fmt.Sprintf("%s %s, \n", trackFieldSID, trackFieldSIDType)
-		query += fmt.Sprintf("%s %s, \n", trackFieldTID, trackFieldTIDType)
+		query += fmt.Sprintf("%s %s, \n", trackFieldCID, trackFieldCIDType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldTime, trackFieldTimeType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldLoc, trackFieldLocType)
 		query += fmt.Sprintf("%s %s, \n", trackFieldLocTime, trackFieldLocTimeType)
@@ -377,13 +389,13 @@ func dbInit() (err error) {
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldSID, err)
 		}
-		// Create the track table index "by tile, by when"
+		// Create the track table index "by cell, by when"
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
-			tableTrack, trackFieldTID, scanFieldDbModified,
-			tableTrack, trackFieldTID, scanFieldDbModified)
+			tableTrack, trackFieldCID, scanFieldDbModified,
+			tableTrack, trackFieldCID, scanFieldDbModified)
 		_, err = db.db.Exec(query)
 		if err != nil {
-			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldTID, err)
+			return fmt.Errorf("%s %s index creation error: %s", tableTrack, trackFieldCID, err)
 		}
 		// Create the track table index "by modified"
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );",
@@ -610,10 +622,23 @@ func dbAddContact(deviceUID string, when int64, deviceSN string, contactName str
 // Add a scan entry to the db
 func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 
+	// If the end of the scan is nil, it's the same as the start
+	if scan.ScanFieldEndedLoc == "" {
+		scan.ScanFieldEnded = scan.ScanFieldBegan
+		scan.ScanFieldEndedLoc = scan.ScanFieldBeganLoc
+		scan.ScanFieldEndedLocHDOP = scan.ScanFieldBeganLocHDOP
+		scan.ScanFieldEndedLocTime = scan.ScanFieldBeganLocTime
+		scan.ScanFieldEndedMotionTime = scan.ScanFieldBeganMotionTime
+	}
+
+	// Compute the midpoint of the scan location, and use it to compute cell ID
+	latMid, lonMid := gpsMidpointFromOLC(scan.ScanFieldBeganLoc, scan.ScanFieldEndedLoc)
+	cid := cellFromLatLon(latMid, lonMid)
+
 	// Generate the query that will replace or update the contact
 	query := fmt.Sprintf("INSERT INTO %s (", tableScan)
 	query += fmt.Sprintf("%s, ", scanFieldSID)
-	query += fmt.Sprintf("%s, ", scanFieldTID)
+	query += fmt.Sprintf("%s, ", scanFieldCID)
 	query += fmt.Sprintf("%s, ", scanFieldXID)
 	query += fmt.Sprintf("%s, ", scanFieldTime)
 	query += fmt.Sprintf("%s, ", scanFieldDuration)
@@ -647,7 +672,7 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	query += fmt.Sprintf("%s, ", scanFieldDataSNR)
 	query += fmt.Sprintf("%s) VALUES (", scanFieldDataSSID)
 	query += fmt.Sprintf("'%s', ", deviceUID)
-	query += fmt.Sprintf("'%s', ", scan.ScanFieldTID)
+	query += fmt.Sprintf("'%s', ", cid)
 	query += fmt.Sprintf("'%s', ", scan.ScanFieldXID)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldTime)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldDuration)
@@ -700,9 +725,13 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 // Add a track entry to the DB
 func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 
+	// Compute the cell within which the track point was recorded
+	cid := cellFromOLC(track.TrackFieldLoc)
+
 	// Generate the query that will replace or update the contact
 	query := fmt.Sprintf("INSERT INTO %s (", tableTrack)
 	query += fmt.Sprintf("%s, ", scanFieldSID)
+	query += fmt.Sprintf("%s, ", scanFieldCID)
 	query += fmt.Sprintf("%s, ", trackFieldTime)
 	query += fmt.Sprintf("%s, ", trackFieldLoc)
 	query += fmt.Sprintf("%s, ", trackFieldLocTime)
@@ -721,6 +750,7 @@ func dbAddTrack(deviceUID string, track RadarTrack) (err error) {
 	query += fmt.Sprintf("%s, ", trackFieldFlagCharging)
 	query += fmt.Sprintf("%s) VALUES (", trackFieldFlagHeartbeat)
 	query += fmt.Sprintf("'%s', ", deviceUID)
+	query += fmt.Sprintf("'%s', ", cid)
 	query += fmt.Sprintf("%d, ", track.TrackFieldTime)
 	query += fmt.Sprintf("'%s', ", track.TrackFieldLoc)
 	query += fmt.Sprintf("%d, ", track.TrackFieldLocTime)
@@ -843,9 +873,9 @@ func dbSetObject(key string, pvalue interface{}) (err error) {
 }
 
 // Enumerate scan records by modified time range
-// Note for posterity that this is a useful way to locate the tiles WITHOUT the records
-//	select distinct on (tid) tid, db_modified from scan where db_modified > '2022-04-27 15:20:00.000'
-func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error) {
+// Note for posterity that this is a useful way to locate the cells WITHOUT the records
+//	select distinct on (cid) cid, db_modified from scan where db_modified > '2022-04-27 15:20:00.000'
+func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []DbScan, err error) {
 
 	// Get database context
 	var db *DbDesc
@@ -858,7 +888,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 	query := "SELECT "
 	query += scanFieldDbModified + ", "
 	query += scanFieldSID + ", "
-	query += scanFieldTID + ", "
+	query += scanFieldCID + ", "
 	query += scanFieldXID + ", "
 	query += scanFieldTime + ", "
 	query += scanFieldDuration + ", "
@@ -906,11 +936,11 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []RadarScan, err error
 
 	// Extract the columns
 	for rows.Next() {
-		var r RadarScan
+		var r DbScan
 		var modifiedStr string
 		err = rows.Scan(&modifiedStr,
 			&r.ScanFieldSID,
-			&r.ScanFieldTID,
+			&r.ScanFieldCID,
 			&r.ScanFieldXID,
 			&r.ScanFieldTime,
 			&r.ScanFieldDuration,
