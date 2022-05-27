@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
@@ -285,12 +286,23 @@ func exportScan(r []DbScan) (err error) {
 
 	}
 
-	// Marshal
+	// Marshal for transmission
 	var ulJSON []byte
 	ulJSON, err = note.JSONMarshalIndent(item, "", "    ")
+	if err != nil {
+		return
+	}
 
 	// Trace
-	fmt.Printf("%s\n", string(ulJSON))
+	ulString := fmt.Sprintf("%s\n\n", string(ulJSON))
+	fmt.Printf("%s", ulString)
+
+	// Append to log - TEMPORARY
+	f, err := os.OpenFile("unwired.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		f.Write([]byte(ulString))
+		f.Close()
+	}
 
 	// Done
 	return
