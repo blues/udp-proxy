@@ -151,6 +151,10 @@ func exportScan(r []DbScan) (err error) {
 		return
 	}
 
+	// If the starting location isn't valid, skip it
+	if !gpsIsValidFromOLC(r[0].ScanFieldBeganLoc) {
+		return
+	}
 	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldCID)
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
@@ -161,7 +165,7 @@ func exportScan(r []DbScan) (err error) {
 	// Add GPS array
 	var pos ulPosition
 	pos.Source = ulPositionSourceGPS
-	if r[0].ScanFieldEndedLoc != "" {
+	if gpsIsValidFromOLC(r[0].ScanFieldEndedLoc) {
 		distanceMeters := olcDistanceMeters(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 		if r[0].ScanFieldDuration != 0 && distanceMeters != 0 {
 			pos.AccuracyMeters = distanceMeters / 2
@@ -169,7 +173,7 @@ func exportScan(r []DbScan) (err error) {
 			pos.HeadingDeg = olcInitialBearing(r[0].ScanFieldBeganLoc, r[0].ScanFieldEndedLoc)
 		}
 	}
-	if r[0].ScanFieldEndedLoc == "" {
+	if !gpsIsValidFromOLC(r[0].ScanFieldEndedLoc) {
 		pos.Latitude, pos.Longitude = gpsFromOLC(r[0].ScanFieldBeganLoc)
 		pos.Timestamp = r[0].ScanFieldBegan * 1000
 		item.GPS = append(item.GPS, pos)

@@ -28,6 +28,25 @@ const R = 6371
 const degreesToRadians = (3.1415926536 / 180)
 const radiansToDegrees = (180 / 3.1415926536)
 
+func gpsIsValidFromOLC(loc string) bool {
+	if loc == "" {
+		return false
+	}
+	area, err := olc.Decode(loc)
+	if err != nil {
+		return false
+	}
+	lat, lon := area.Center()
+	return gpsIsValid(lat, lon)
+}
+
+func gpsIsValid(lat float64, lon float64) bool {
+	if lat == 0 && lon == 0 {
+		return false
+	}
+	return true
+}
+
 func gpsFromOLC(loc string) (lat float64, lon float64) {
 	area, err := olc.Decode(loc)
 	if err == nil {
