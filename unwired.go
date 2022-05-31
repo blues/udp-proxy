@@ -112,7 +112,18 @@ func exportRecs(r []DbScan) (err error) {
 		}
 
 		// Tertiary key is when the scan began
-		return r[i].ScanFieldBegan < r[j].ScanFieldBegan
+		if r[i].ScanFieldBegan != r[j].ScanFieldBegan {
+			return r[i].ScanFieldBegan < r[j].ScanFieldBegan
+		}
+
+		// Quaternary key is the transmitter ID, which may be scanned multiple times in a journey
+		if r[i].ScanFieldXID != r[j].ScanFieldXID {
+			return r[i].ScanFieldXID < r[j].ScanFieldXID
+		}
+
+		// Quinary key is the signal strength.  Because sort.Slice sorts in ascending order,
+		// we reverse the sense of the comparison so that we get highest signal strength first.
+		return r[i].ScanFieldDataRSSI > r[j].ScanFieldDataRSSI
 
 	})
 
@@ -189,10 +200,18 @@ func exportScan(r []DbScan) (err error) {
 		item.GPS = append(item.GPS, pos)
 	}
 
-	// Append the records from the various cells
+	// Append the records from the various cells, eliminating duplicates for transmitters
+	prevRec := DbScan{}
 	for _, rec := range r {
 		var c ulCell
 		var w ulWiFi
+
+		// Eliminate transmitter duplicates.  Note that because we sorted these entries
+		// in descending order by RSSI, we will retain the one with the strongest signal.
+		if prevRec.ScanFieldXID == rec.ScanFieldXID {
+			continue
+		}
+		prevRec = rec
 
 		switch rec.ScanFieldDataRAT {
 		case ScanRatGSM:
