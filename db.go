@@ -90,6 +90,10 @@ const scanFieldEndedLocTime = "ended_loc_time"
 const scanFieldEndedLocTimeType = fieldTimeType
 const scanFieldEndedMotionTime = "ended_motion_time"
 const scanFieldEndedMotionTimeType = fieldTimeType
+const scanFieldMidpointLat = "lat"
+const scanFieldMidpointLatType = "REAL"
+const scanFieldMidpointLon = "lon"
+const scanFieldMidpointLonType = "REAL"
 const scanFieldDataRAT = "rat"
 const scanFieldDataRATType = "TEXT"
 const scanFieldDataMCC = "mcc"
@@ -274,6 +278,8 @@ func dbInit() (err error) {
 		query += fmt.Sprintf("%s %s, \n", scanFieldEndedLocHDOP, scanFieldEndedLocHDOPType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldEndedLocTime, scanFieldEndedLocTimeType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldEndedMotionTime, scanFieldEndedMotionTimeType)
+		query += fmt.Sprintf("%s %s, \n", scanFieldMidpointLat, scanFieldMidpointLatType)
+		query += fmt.Sprintf("%s %s, \n", scanFieldMidpointLon, scanFieldMidpointLonType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldDataRAT, scanFieldDataRATType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldDataMCC, scanFieldDataMCCType)
 		query += fmt.Sprintf("%s %s, \n", scanFieldDataMNC, scanFieldDataMNCType)
@@ -321,6 +327,20 @@ func dbInit() (err error) {
 		_, err = db.db.Exec(query)
 		if err != nil {
 			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldXID, err)
+		}
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableScan, scanFieldXID, scanFieldMidpointLat,
+			tableScan, scanFieldXID, scanFieldMidpointLat)
+		_, err = db.db.Exec(query)
+		if err != nil {
+			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldMidpointLat, err)
+		}
+		query = fmt.Sprintf("CREATE INDEX ia_%s_%s_%s ON %s ( %s ASC, %s ASC );",
+			tableScan, scanFieldXID, scanFieldMidpointLon,
+			tableScan, scanFieldXID, scanFieldMidpointLon)
+		_, err = db.db.Exec(query)
+		if err != nil {
+			return fmt.Errorf("%s %s index creation error: %s", tableScan, scanFieldMidpointLon, err)
 		}
 		query = fmt.Sprintf("CREATE INDEX ia_%s_%s ON %s ( %s ASC );",
 			tableScan, scanFieldDbModified,
@@ -654,6 +674,8 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	query += fmt.Sprintf("%s, ", scanFieldEndedLocHDOP)
 	query += fmt.Sprintf("%s, ", scanFieldEndedLocTime)
 	query += fmt.Sprintf("%s, ", scanFieldEndedMotionTime)
+	query += fmt.Sprintf("%s, ", scanFieldMidpointLat)
+	query += fmt.Sprintf("%s, ", scanFieldMidpointLon)
 	query += fmt.Sprintf("%s, ", scanFieldDataRAT)
 	query += fmt.Sprintf("%s, ", scanFieldDataMCC)
 	query += fmt.Sprintf("%s, ", scanFieldDataMNC)
@@ -688,6 +710,8 @@ func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 	query += fmt.Sprintf("%d, ", scan.ScanFieldEndedLocHDOP)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldEndedLocTime)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldEndedMotionTime)
+	query += fmt.Sprintf("%f, ", latMid)
+	query += fmt.Sprintf("%f, ", lonMid)
 	query += fmt.Sprintf("'%s', ", scan.ScanFieldDataRAT)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldDataMCC)
 	query += fmt.Sprintf("%d, ", scan.ScanFieldDataMNC)
@@ -904,6 +928,8 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []DbScan, err error) {
 	query += scanFieldEndedLocHDOP + ", "
 	query += scanFieldEndedLocTime + ", "
 	query += scanFieldEndedMotionTime + ", "
+	query += scanFieldMidpointLat + ", "
+	query += scanFieldMidpointLon + ", "
 	query += scanFieldDataRAT + ", "
 	query += scanFieldDataMCC + ", "
 	query += scanFieldDataMNC + ", "
@@ -956,6 +982,8 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []DbScan, err error) {
 			&r.ScanFieldEndedLocHDOP,
 			&r.ScanFieldEndedLocTime,
 			&r.ScanFieldEndedMotionTime,
+			&r.ScanFieldMidpointLat,
+			&r.ScanFieldMidpointLon,
 			&r.ScanFieldDataRAT,
 			&r.ScanFieldDataMCC,
 			&r.ScanFieldDataMNC,
@@ -1008,5 +1036,38 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []DbScan, err error) {
 	}
 
 	return
+
+}
+
+// Compute the maximum distance, across users, of sightings of a given WiFi AP
+// so that we can try to tell if this is a mobile or a fixed hotspot.  Mobile
+// hotspots occur frequently within modern vehicles and they don't help when
+// trying to geolocate something.  Rather than do something super expensive,
+// we create a bounding box that consists of the highest and lowest lat and lon
+// and find the length of the hypotenuse between the two.  Note that 'name'
+// is simply used for trace/debug messages and can be "".
+func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
+
+	// Get database context
+	db, err := dbContext()
+	if err != nil {
+		return
+	}
+
+	// Perform the query
+	query := fmt.Sprintf("SELECT MIN(%s), MIN(%s), MAX(%s), MAX(%s) FROM %s WHERE %s = '%s')",
+		scanFieldMidpointLat, scanFieldMidpointLon, scanFieldMidpointLat, scanFieldMidpointLon,
+		tableScan, scanFieldXID, xid)
+	var row string
+	err = db.db.QueryRow(query).Scan(&row)
+	if err != nil {
+		return
+	}
+
+	// The row contains four items
+	fmt.Printf("%s (%s): '%s'\n", xid, name, row)
+	return
+
+	// Compute c = sqrt(a^2+b^2)
 
 }

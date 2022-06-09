@@ -36,6 +36,8 @@ type RadarScan struct {
 	ScanFieldEndedLocHDOP    int64   `json:"ended_loc_hdop,omitempty"`
 	ScanFieldEndedLocTime    int64   `json:"ended_loc_time,omitempty"`
 	ScanFieldEndedMotionTime int64   `json:"ended_motion_time,omitempty"`
+	ScanFieldMidpointLat     float64 `json:"lat,omitempty"` // computed
+	ScanFieldMidpointLon     float64 `json:"lon,omitempty"` // computed
 	ScanFieldDataRAT         string  `json:"rat,omitempty"`
 	ScanFieldDataMCC         int64   `json:"mcc,omitempty"`
 	ScanFieldDataMNC         int64   `json:"mnc,omitempty"`

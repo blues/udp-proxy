@@ -213,6 +213,18 @@ func exportScan(r []DbScan) (err error) {
 		}
 		prevRec = rec
 
+		// For WiFi records, skip APs that appear to be 'mobile' hotspots, as determined
+		// by the maximum distance between sightings being more than 1km.
+		if rec.ScanFieldDataBSSID != "" {
+			maxDistanceMeters := dbComputeMaxDistanceMeters(rec.ScanFieldXID, rec.ScanFieldDataSSID)
+			if maxDistanceMeters > 1000 {
+				fmt.Printf("unwired: skipping WiFi AP %s (%s) which was seen %d meters apart\n",
+					rec.ScanFieldDataBSSID, rec.ScanFieldDataSSID, maxDistanceMeters)
+				continue
+			}
+		}
+
+		// Decompose the scan record into the unwired format
 		switch rec.ScanFieldDataRAT {
 		case ScanRatGSM:
 			c.Radio = ulRadioGSM
