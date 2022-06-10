@@ -8,6 +8,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -642,6 +643,11 @@ func dbAddContact(deviceUID string, when int64, deviceSN string, contactName str
 // Add a scan entry to the db
 func dbAddScan(deviceUID string, scan RadarScan) (err error) {
 
+	// Skip it if there's no begin loc
+	if scan.ScanFieldBeganLoc == "" {
+		return
+	}
+
 	// If the end of the scan is nil, it's the same as the start
 	if scan.ScanFieldEndedLoc == "" {
 		scan.ScanFieldEnded = scan.ScanFieldBegan
@@ -1046,7 +1052,7 @@ func dbGetChangedRecs(sinceMs int64, untilMs int64) (recs []DbScan, err error) {
 // we create a bounding box that consists of the highest and lowest lat and lon
 // and find the length of the hypotenuse between the two.  Note that 'name'
 // is simply used for trace/debug messages and can be "".
-func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
+func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters float64) {
 
 	// Get database context
 	db, err := dbContext()
@@ -1058,17 +1064,20 @@ func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
 	query := fmt.Sprintf("SELECT MIN(%s), MIN(%s), MAX(%s), MAX(%s) FROM %s WHERE %s = '%s'",
 		scanFieldMidpointLat, scanFieldMidpointLon, scanFieldMidpointLat, scanFieldMidpointLon,
 		tableScan, scanFieldXID, xid)
-	var topLeftLat, topLeftLon, bottomRightLat, bottomRightLon float64
-	err = db.db.QueryRow(query).Scan(&topLeftLat, &topLeftLon, &bottomRightLat, &bottomRightLon)
+	var bottomLeftLat, bottomLeftLon, topRightLat, topRightLon float64
+	err = db.db.QueryRow(query).Scan(&bottomLeftLat, &bottomLeftLon, &topRightLat, &topRightLon)
 	if err != nil {
 		fmt.Printf("dbComputeMaxDistanceMeters %s (%s): %s\n", xid, name, err)
 		return
 	}
 
-	// The row contains four items
-	fmt.Printf("%s (%s): '%f,%f,%f,%f'\n", xid, name, topLeftLat, topLeftLon, bottomRightLat, bottomRightLon)
-	return
+	// Compute the hypotenuse
+	a := math.Abs(bottomLeftLat - topRightLat)
+	b := math.Abs(bottomLeftLon - topRightLon)
+	c := math.Sqrt(a*a + b*b)
+	fmt.Printf("%s (%s): '%f,%f %f,%f %f %f %f'\n", xid, name, bottomLeftLat, bottomLeftLon, topRightLat, topRightLon, a, b, c)
 
-	// Compute c = sqrt(a^2+b^2)
+	// Return the hypotenuse
+	return c
 
 }

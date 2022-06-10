@@ -220,7 +220,7 @@ func exportScan(r []DbScan) (err error) {
 		if rec.ScanFieldDataBSSID != "" {
 			maxDistanceMeters := dbComputeMaxDistanceMeters(rec.ScanFieldXID, rec.ScanFieldDataSSID)
 			if maxDistanceMeters > 1000 {
-				fmt.Printf("unwired: skipping WiFi AP %s (%s) which was seen %d meters apart\n",
+				fmt.Printf("unwired: skipping WiFi AP %s (%s) which was seen %f meters apart\n",
 					rec.ScanFieldDataBSSID, rec.ScanFieldDataSSID, maxDistanceMeters)
 				continue
 			}

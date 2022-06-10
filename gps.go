@@ -48,9 +48,11 @@ func gpsIsValid(lat float64, lon float64) bool {
 }
 
 func gpsFromOLC(loc string) (lat float64, lon float64) {
-	area, err := olc.Decode(loc)
-	if err == nil {
-		lat, lon = area.Center()
+	if loc != "" {
+		area, err := olc.Decode(loc)
+		if err == nil {
+			lat, lon = area.Center()
+		}
 	}
 	return
 }
