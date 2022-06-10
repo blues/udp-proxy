@@ -204,6 +204,7 @@ func exportScan(r []DbScan) (err error) {
 
 	// Append the records from the various cells, eliminating duplicates for transmitters
 	prevRec := DbScan{}
+	recs := 0
 	for _, rec := range r {
 		var c ulCell
 		var w ulWiFi
@@ -316,11 +317,18 @@ func exportScan(r []DbScan) (err error) {
 
 		if c.Radio != "" {
 			item.Cells = append(item.Cells, c)
+			recs++
 		}
 		if w.BSSID != "" {
 			item.WiFi = append(item.WiFi, w)
+			recs++
 		}
 
+	}
+
+	// If no records appended, we're done
+	if recs == 0 {
+		return
 	}
 
 	// Marshal for transmission
