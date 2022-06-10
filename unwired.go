@@ -164,8 +164,10 @@ func exportScan(r []DbScan) (err error) {
 
 	// If the starting location isn't valid, skip it
 	if !gpsIsValidFromOLC(r[0].ScanFieldBeganLoc) {
+		fmt.Printf("exportScan: gps not available for %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldCID)
 		return
 	}
+
 	fmt.Printf("exportScan: exporting %d-record scan done by %s in %s\n", len(r), r[0].ScanFieldSID, r[0].ScanFieldCID)
 
 	// Begin to formulate an item by using a position at the midpoint of the line traveled during the scan
