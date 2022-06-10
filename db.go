@@ -1055,7 +1055,7 @@ func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
 	}
 
 	// Perform the query
-	query := fmt.Sprintf("SELECT MIN(%s), MIN(%s), MAX(%s), MAX(%s) FROM %s WHERE %s = '%s')",
+	query := fmt.Sprintf("SELECT MIN(%s), MIN(%s), MAX(%s), MAX(%s) FROM %s WHERE %s = '%s'",
 		scanFieldMidpointLat, scanFieldMidpointLon, scanFieldMidpointLat, scanFieldMidpointLon,
 		tableScan, scanFieldXID, xid)
 	var row string
