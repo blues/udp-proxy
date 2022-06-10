@@ -8,7 +8,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"math"
 	"strings"
 	"sync"
 	"time"
@@ -1071,13 +1070,11 @@ func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters float64
 		return
 	}
 
-	// Compute the hypotenuse
-	a := math.Abs(bottomLeftLat - topRightLat)
-	b := math.Abs(bottomLeftLon - topRightLon)
-	c := math.Sqrt(a*a + b*b)
-	fmt.Printf("%s (%s): '%f,%f %f,%f %f %f %f'\n", xid, name, bottomLeftLat, bottomLeftLon, topRightLat, topRightLon, a, b, c)
+	// Return the distance of the hypotenuse
+	distanceMeters = gpsDistanceMeters(bottomLeftLat, bottomLeftLon, topRightLat, topRightLon)
+	fmt.Printf("%s (%s): from %f,%f to %f,%f is %f meters\n", xid, name, bottomLeftLat, bottomLeftLon, topRightLat, topRightLon, distanceMeters)
 
-	// Return the hypotenuse
-	return c
+	// Done
+	return
 
 }
