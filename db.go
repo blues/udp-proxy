@@ -1061,6 +1061,7 @@ func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
 	var row string
 	err = db.db.QueryRow(query).Scan(&row)
 	if err != nil {
+		fmt.Printf("dbComputeMaxDistanceMeters %s (%s): %s\n", xid, name, err)
 		return
 	}
 
