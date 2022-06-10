@@ -1058,15 +1058,15 @@ func dbComputeMaxDistanceMeters(xid string, name string) (distanceMeters int) {
 	query := fmt.Sprintf("SELECT MIN(%s), MIN(%s), MAX(%s), MAX(%s) FROM %s WHERE %s = '%s'",
 		scanFieldMidpointLat, scanFieldMidpointLon, scanFieldMidpointLat, scanFieldMidpointLon,
 		tableScan, scanFieldXID, xid)
-	var row string
-	err = db.db.QueryRow(query).Scan(&row)
+	var topLeftLat, topLeftLon, bottomRightLat, bottomRightLon float64
+	err = db.db.QueryRow(query).Scan(&topLeftLat, &topLeftLon, &bottomRightLat, &bottomRightLon)
 	if err != nil {
 		fmt.Printf("dbComputeMaxDistanceMeters %s (%s): %s\n", xid, name, err)
 		return
 	}
 
 	// The row contains four items
-	fmt.Printf("%s (%s): '%s'\n", xid, name, row)
+	fmt.Printf("%s (%s): '%f,%f,%f,%f'\n", xid, name, topLeftLat, topLeftLon, bottomRightLat, bottomRightLon)
 	return
 
 	// Compute c = sqrt(a^2+b^2)
