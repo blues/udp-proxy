@@ -28,12 +28,12 @@ type RadarScan struct {
 	ScanFieldBearing         float64 `json:"bearing,omitempty"`
 	ScanFieldBegan           int64   `json:"began,omitempty"`
 	ScanFieldBeganLoc        string  `json:"began_loc,omitempty"`
-	ScanFieldBeganLocHDOP    int64   `json:"began_loc_hdop,omitempty"`
+	ScanFieldBeganLocHDOP    float64 `json:"began_loc_dop,omitempty"`
 	ScanFieldBeganLocTime    int64   `json:"began_loc_time,omitempty"`
 	ScanFieldBeganMotionTime int64   `json:"began_motion_time,omitempty"`
 	ScanFieldEnded           int64   `json:"ended,omitempty"`
 	ScanFieldEndedLoc        string  `json:"ended_loc,omitempty"`
-	ScanFieldEndedLocHDOP    int64   `json:"ended_loc_hdop,omitempty"`
+	ScanFieldEndedLocHDOP    float64 `json:"ended_loc_dop,omitempty"`
 	ScanFieldEndedLocTime    int64   `json:"ended_loc_time,omitempty"`
 	ScanFieldEndedMotionTime int64   `json:"ended_motion_time,omitempty"`
 	ScanFieldMidpointLat     float64 `json:"lat,omitempty"` // computed
@@ -70,7 +70,7 @@ type RadarTrack struct {
 	TrackFieldTime           int64   `json:"when,omitempty"`
 	TrackFieldLoc            string  `json:"loc,omitempty"`
 	TrackFieldLocTime        int64   `json:"time,omitempty"`
-	TrackFieldLocHDOP        int64   `json:"hdop,omitempty"`
+	TrackFieldLocHDOP        float64 `json:"dop,omitempty"`
 	TrackFieldJourneyTime    int64   `json:"journey,omitempty"`
 	TrackFieldJourneyCount   int64   `json:"jcount,omitempty"`
 	TrackFieldMotionCount    int64   `json:"motion,omitempty"`
