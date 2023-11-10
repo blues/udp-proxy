@@ -5,39 +5,14 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"time"
 )
-
-// Directory that will be used for data
-const configDataDirectoryBase = "/data/"
-
-// Fully-resolved data directory
-var configDataDirectory = ""
 
 // Main service entry point
 func main() {
 
-	// Read creds
-	ServiceReadConfig()
-
-	// Compute data folder location
-	configDataDirectory = os.Getenv("HOME") + configDataDirectoryBase
-	_ = configDataDirectory
-
-	// Initialize subsystems
-	err := dbInit()
-	if err != nil {
-		fmt.Printf("db: %s\n", err)
-		os.Exit(-1)
-	}
-
 	// Spawn the console input handler
 	go inputHandler()
-
-	// Spawn the Unwired exporter
-	go exportUnwired()
 
 	// Spawn the web request inbound server
 	go HTTPInboundHandler(":80")
