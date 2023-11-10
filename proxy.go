@@ -12,19 +12,19 @@ import (
 var headerIndex = map[string][]struct{ Header, Value string }{
 
 	// Ray's dev
-	"api.ray.blues.tools/udp": {
+	"/api.ray.blues.tools/udp": {
 		{Header: "UDP_IPV4", Value: "44.209.181.127"},
 		{Header: "UDP_PORT", Value: "8087"},
 	},
 
 	// Staging
-	"api.staging.blues.tools/udp": {
+	"/api.staging.blues.tools/udp": {
 		{Header: "UDP_IPV4", Value: "44.209.181.127"},
 		{Header: "UDP_PORT", Value: "8088"},
 	},
 
 	// Production
-	"api.notefile.net/udp": {
+	"/api.notefile.net/udp": {
 		{Header: "UDP_IPV4", Value: "44.209.181.127"},
 		{Header: "UDP_PORT", Value: "8089"},
 	},
