@@ -12,6 +12,9 @@ import (
 // Main service entry point
 func main() {
 
+	// Register the UDP proxy handlers
+	go udpProxyHandlers()
+
 	// Register endpoint for udp-proxy.net lookups
 	http.HandleFunc("/", httpProxyLookupHandler)
 
