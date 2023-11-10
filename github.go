@@ -686,7 +686,7 @@ type StatusCommit struct {
 }
 
 // Github webhook
-func inboundWebGithubHandler(rw http.ResponseWriter, req *http.Request) {
+func httpGithubHandler(rw http.ResponseWriter, req *http.Request) {
 
 	// Unpack the request
 	body, err := ioutil.ReadAll(req.Body)
