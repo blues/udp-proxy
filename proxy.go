@@ -15,6 +15,8 @@ import (
 	"strings"
 )
 
+const traceIo = true
+
 var headerIndex = map[string][]struct{ Key, Value string }{
 
 	// Scott's dev
@@ -113,6 +115,9 @@ func udpProxyHandler(target string, port string) {
 				return fmt.Errorf("udp: resolving return IP: %s", err)
 			}
 
+			if traceIo {
+				fmt.Printf("rsp: %d bytes to %s\n", len(data), addr.String())
+			}
 			_, err = sock.WriteTo(data, ip)
 			if err != nil {
 				return fmt.Errorf("udp: error writing socket: %s", err)
@@ -130,6 +135,11 @@ func udpProxyHandler(target string, port string) {
 
 // Handle proxying a single incoming UDP packet
 func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byte) {
+
+	// Trace
+	if traceIo {
+		fmt.Printf("req: %d bytes to %s\n", len(data), targetUrl)
+	}
 
 	// Create a new HTTP request with the hex data as the body
 	req, err := http.NewRequest("POST", targetUrl, bytes.NewBufferString(hex.EncodeToString(data)))
