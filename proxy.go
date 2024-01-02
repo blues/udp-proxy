@@ -116,7 +116,7 @@ func udpProxyHandler(target string, port string) {
 			}
 
 			if traceIo {
-				fmt.Printf("rsp: %d bytes to %s\n", len(data), addr.String())
+				fmt.Printf("rsp %s %d bytes to %s\n", port, len(data), addr.String())
 			}
 			_, err = sock.WriteTo(data, ip)
 			if err != nil {
@@ -124,6 +124,11 @@ func udpProxyHandler(target string, port string) {
 			}
 
 			return err
+		}
+
+		// Trace
+		if traceIo {
+			fmt.Printf("req %s %d bytes to %s\n", port, buflen, targetURL)
 		}
 
 		// Dispatch the handling of a single UDP packet to a target
@@ -135,11 +140,6 @@ func udpProxyHandler(target string, port string) {
 
 // Handle proxying a single incoming UDP packet
 func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byte) {
-
-	// Trace
-	if traceIo {
-		fmt.Printf("req: %d bytes to %s\n", len(data), targetUrl)
-	}
 
 	// Create a new HTTP request with the hex data as the body
 	req, err := http.NewRequest("POST", targetUrl, bytes.NewBufferString(hex.EncodeToString(data)))
