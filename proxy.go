@@ -1,4 +1,4 @@
-// Copyright 2023 Blues Inc.  All rights reserved.
+// Copyright 2024 Blues Inc.  All rights reserved.
 // Use of this source code is governed by licenses granted by the
 // copyright holder including that found in the LICENSE file.
 
@@ -17,6 +17,7 @@ import (
 
 const traceIo = true
 
+<<<<<<< HEAD
 var headerIndex = map[string][]struct{ Key, Value string }{
 
 	// Scott's dev
@@ -44,6 +45,8 @@ var headerIndex = map[string][]struct{ Key, Value string }{
 	},
 }
 
+=======
+>>>>>>> 24710c8 (m)
 // Lookup the proxy for a given server
 func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -52,7 +55,7 @@ func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headers, present := headerIndex[strings.TrimPrefix(r.URL.Path, "/")]
+	headers, present := proxyData[strings.TrimPrefix(r.URL.Path, "/")]
 	if !present {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -69,7 +72,7 @@ func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 // Register a UDP handler for each target
 func udpProxyHandlers() {
 
-	for target, headers := range headerIndex {
+	for target, headers := range proxyData {
 		for _, header := range headers {
 			if header.Key == "udp_port" {
 				go udpProxyHandler(target, header.Value)
