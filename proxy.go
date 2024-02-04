@@ -15,38 +15,9 @@ import (
 	"strings"
 )
 
+// Display the proxy server activity on console
 const traceIo = true
 
-<<<<<<< HEAD
-var headerIndex = map[string][]struct{ Key, Value string }{
-
-	// Scott's dev
-	"api.ray.blues.tools/udp": {
-		{Key: "udp_ipv4", Value: "216.245.146.112"},
-		{Key: "udp_port", Value: "8086"},
-	},
-
-	// Ray's dev
-	"api.scott.blues.tools/udp": {
-		{Key: "udp_ipv4", Value: "216.245.146.112"},
-		{Key: "udp_port", Value: "8087"},
-	},
-
-	// Staging
-	"api.staging.blues.tools/udp": {
-		{Key: "udp_ipv4", Value: "216.245.146.112"},
-		{Key: "udp_port", Value: "8088"},
-	},
-
-	// Production
-	"api.notefile.net/udp": {
-		{Key: "udp_ipv4", Value: "216.245.146.112"},
-		{Key: "udp_port", Value: "8089"},
-	},
-}
-
-=======
->>>>>>> 24710c8 (m)
 // Lookup the proxy for a given server
 func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 
