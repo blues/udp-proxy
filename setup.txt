@@ -52,3 +52,8 @@ screen -r
 # the absolutely essential things to remember:
 ctrl-a d       // Detaches the screen session and returns to bash
 ctrl-a <ESC>   // Allows you to use arrow keys to scroll back to
+
+# While you are in the screen session, remember that typing
+# the letter 'q' followed by <enter> will quit the session,
+# re-pull the latest code from the repo, and restart the
+# udp proxy server.  This is the way to re-deploy updates.
