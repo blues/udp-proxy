@@ -1,3 +1,3 @@
-module github.com/blues/radarhub
+module udp-proxy
 
-go 1.17
+go 1.21.5
