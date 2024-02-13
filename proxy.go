@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -132,7 +132,7 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 	defer rsp.Body.Close()
 
 	// Read the response body
-	rspBody, err := ioutil.ReadAll(rsp.Body)
+	rspBody, err := io.ReadAll(rsp.Body)
 	if err != nil {
 		fmt.Printf("proxy: error reading result UDP packet body from %s: %v\n", targetUrl, err)
 		return
