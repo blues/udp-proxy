@@ -4,7 +4,7 @@ ssh -i $HOME/dev/keys/blues-tower/tower.pem ubuntu@216.245.146.112
 
 # HOW TO SSH TO THE PROD VERSION VIA BASTION
 ssh -Y blues.prod
-ssh -v 10.0.68.126
+ssh -v 10.0.0.5
 
 # Install essentials
 sudo apt install emacs --assume-yes
