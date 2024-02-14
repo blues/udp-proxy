@@ -11,7 +11,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -20,24 +19,34 @@ const traceIo = true
 
 // Lookup the proxy for a given server
 func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
+	if traceIo {
+		fmt.Print(getNowTimestamp(), r.RemoteAddr, r.Method, r.URL.Path)
+	}
 
 	if r.Method != "GET" || r.URL.Path == "/favicon.ico" {
+		if traceIo {
+			fmt.Println(http.StatusNotImplemented)
+		}
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 
 	headers, present := proxyData[strings.TrimPrefix(r.URL.Path, "/")]
-	if traceIo {
-		fmt.Println("Proxy lookup from ", r.RemoteAddr, " for ", r.URL.Path)
-	}
 
 	if !present {
+		if traceIo {
+			fmt.Println(http.StatusNotFound)
+		}
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	for _, v := range headers {
 		w.Header().Set(v.Key, v.Value)
+	}
+
+	if traceIo {
+		fmt.Println(http.StatusOK, headers[0].Value, headers[1].Value) // ipv4, port (headers should really be changed to a real structure)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -62,14 +71,12 @@ func udpProxyHandler(target string, port string) {
 
 	addr, err := net.ResolveUDPAddr("udp", ":"+port)
 	if err != nil {
-		fmt.Printf("can't resolve UDP port %s for target %s: %v", port, target, err)
-		os.Exit(43)
+		loggedExit(43, "can't resolve UDP port", port, "for target", target, ":", err)
 	}
 
 	sock, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		fmt.Printf("can't listen on UDP port %s for target %s: %v", port, target, err)
-		os.Exit(44)
+		loggedExit(44, "can't listen on UDP port", port, "for target", target, ":", err)
 	}
 	defer sock.Close()
 

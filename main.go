@@ -31,8 +31,7 @@ func main() {
 	http.HandleFunc("/ping", httpPingHandler)
 	go func() {
 		if err := http.ListenAndServe(":80", nil); err != nil {
-			fmt.Println("Error starting HTTP listener: ", err)
-			os.Exit(41)
+			loggedExit(41, "Error starting HTTP listener:", err)
 		}
 	}()
 
@@ -44,10 +43,24 @@ func main() {
 
 }
 
+func loggedExit(code int, message ...any) {
+	fmt.Println(message...)
+	fmt.Println("Exiting with code", code)
+	// If you don't sleep for a bit, the last output will be lost
+	time.Sleep(250 * time.Millisecond)
+	os.Exit(code)
+}
+
+func getNowTimestamp() string {
+	return time.Now().UTC().Format("2006-01-02T15:04:05Z")
+}
+
 // Ping handler, for AWS health checks
 func httpPingHandler(w http.ResponseWriter, r *http.Request) {
-	_, _ = w.Write([]byte(time.Now().UTC().Format("2006-01-02T15:04:05Z")))
-	fmt.Println("Ping from ", r.RemoteAddr)
+	_, _ = w.Write([]byte(getNowTimestamp()))
+	if traceIo {
+		fmt.Println(getNowTimestamp(), r.RemoteAddr, "PING")
+	}
 }
 
 func inputHandler() {
@@ -89,10 +102,10 @@ func signalHandler() {
 	signal.Notify(ch, syscall.SIGSEGV)
 
 	signal := <-ch
-	fmt.Println("*** Exiting because of SIGNAL ", signal)
+	exitCode := 1
 	switch signal {
 	case syscall.SIGINT, syscall.SIGTERM:
-		os.Exit(0)
+		exitCode = 0
 	}
-	os.Exit(1)
+	loggedExit(exitCode, "*** Exiting because of SIGNAL", signal)
 }
