@@ -82,12 +82,14 @@ func signalHandler() {
 	signal.Notify(ch, syscall.SIGINT)
 	signal.Notify(ch, syscall.SIGSEGV)
 	for {
-		switch <-ch {
+		signal := <-ch
+		fmt.Println("*** Exiting because of SIGNAL ", signal)
+		switch signal {
 		case syscall.SIGINT:
-			fmt.Printf("*** Exiting because of SIGNAL \n")
-			os.Exit(0)
 		case syscall.SIGTERM:
-			return
+			os.Exit(0)
+		case syscall.SIGSEGV:
+			os.Exit(1)
 		}
 	}
 }
