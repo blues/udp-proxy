@@ -29,7 +29,12 @@ func main() {
 
 	// Register AWS health check endpoint
 	http.HandleFunc("/ping", httpPingHandler)
-	go func() { _ = http.ListenAndServe(":80", nil) }()
+	go func() {
+		if err := http.ListenAndServe(":80", nil); err != nil {
+			fmt.Println("Error starting HTTP listener: ", err)
+			os.Exit(41)
+		}
+	}()
 
 	// Spawn our signal handler
 	go signalHandler()
@@ -42,6 +47,7 @@ func main() {
 // Ping handler, for AWS health checks
 func httpPingHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(time.Now().UTC().Format("2006-01-02T15:04:05Z")))
+	fmt.Println("Ping from ", r.RemoteAddr)
 }
 
 func inputHandler() {

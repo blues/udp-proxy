@@ -27,6 +27,10 @@ func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	headers, present := proxyData[strings.TrimPrefix(r.URL.Path, "/")]
+	if traceIo {
+		fmt.Println("Proxy lookup from ", r.RemoteAddr, " for ", r.URL.Path)
+	}
+
 	if !present {
 		w.WriteHeader(http.StatusNotFound)
 		return
