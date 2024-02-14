@@ -73,6 +73,12 @@ func inputHandler() {
 
 	}
 
+	err := scanner.Err()
+	if err != nil {
+		fmt.Println("Input handler shutting down due to error", err)
+	} else {
+		fmt.Println("Input handler shutting down due to EOF")
+	}
 }
 
 // Our app's signal handler
