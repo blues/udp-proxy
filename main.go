@@ -54,9 +54,8 @@ func inputHandler() {
 
 	scanner := bufio.NewScanner(os.Stdin)
 
-	for {
-
-		scanner.Scan()
+	// Loops indefinitely, waiting for input unless Stdin gets an error or EOF
+	for scanner.Scan() {
 		message := scanner.Text()
 
 		args := strings.Split(message, " ")
