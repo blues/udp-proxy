@@ -20,7 +20,7 @@ const traceIo = true
 // Lookup the proxy for a given server
 func httpProxyLookupHandler(w http.ResponseWriter, r *http.Request) {
 	if traceIo {
-		fmt.Print(getNowTimestamp(), r.RemoteAddr, r.Method, r.URL.Path)
+		fmt.Print(getNowTimestamp(), " ", r.RemoteAddr, " ", r.Method, " ", r.URL.Path, " ")
 	}
 
 	if r.Method != "GET" || r.URL.Path == "/favicon.ico" {

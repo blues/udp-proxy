@@ -46,7 +46,8 @@ func main() {
 func loggedExit(code int, message ...any) {
 	fmt.Println(message...)
 	fmt.Println("Exiting with code", code)
-	// If you don't sleep for a bit, the last output will be lost
+	os.Stdout.Sync()
+	// If you don't sleep for a bit, the last output may be lost when redirecting to a file
 	time.Sleep(250 * time.Millisecond)
 	os.Exit(code)
 }
