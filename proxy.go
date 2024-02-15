@@ -88,7 +88,7 @@ func udpProxyHandler(target string, port string) {
 		buf := make([]byte, 65535)
 		buflen, addr, err := sock.ReadFrom(buf)
 		if err != nil {
-			fmt.Printf("error reading from UDP port %s for target %s: %v", port, target, err)
+			fmt.Printf("%s error reading from UDP port %s for target %s: %v", getNowTimestamp(), port, target, err)
 			continue
 		}
 
@@ -101,7 +101,7 @@ func udpProxyHandler(target string, port string) {
 			}
 
 			if traceIo {
-				fmt.Printf("rsp %s %d bytes to %s\n", port, len(data), addr.String())
+				fmt.Printf("%s rsp %s %d bytes to %s\n", getNowTimestamp(), port, len(data), addr.String())
 			}
 			_, err = sock.WriteTo(data, ip)
 			if err != nil {
@@ -113,7 +113,7 @@ func udpProxyHandler(target string, port string) {
 
 		// Trace
 		if traceIo {
-			fmt.Printf("req %s %d bytes to %s\n", port, buflen, targetURL)
+			fmt.Printf("%s req %s %d bytes to %s\n", getNowTimestamp(), port, buflen, targetURL)
 		}
 
 		// Dispatch the handling of a single UDP packet to a target
@@ -129,7 +129,7 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 	// Create a new HTTP request with the hex data as the body
 	req, err := http.NewRequest("POST", targetUrl, bytes.NewBufferString(hex.EncodeToString(data)))
 	if err != nil {
-		fmt.Printf("proxy: error creating new request for %s: %v\n", targetUrl, err)
+		fmt.Printf("%s proxy: error creating new request for %s: %v\n", getNowTimestamp(), targetUrl, err)
 		return
 	}
 
@@ -137,7 +137,7 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 	client := &http.Client{}
 	rsp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("proxy: error sending UDP packet to %s: %v\n", targetUrl, err)
+		fmt.Printf("%s proxy: error sending UDP packet to %s: %v\n", getNowTimestamp(), targetUrl, err)
 		return
 	}
 	defer rsp.Body.Close()
@@ -145,7 +145,7 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 	// Read the response body
 	rspBody, err := io.ReadAll(rsp.Body)
 	if err != nil {
-		fmt.Printf("proxy: error reading result UDP packet body from %s: %v\n", targetUrl, err)
+		fmt.Printf("%s proxy: error reading result UDP packet body from %s: %v\n", getNowTimestamp(), targetUrl, err)
 		return
 	}
 
@@ -155,14 +155,14 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 		// Decode the hex-formatted body
 		decodedData, err := hex.DecodeString(string(rspBody))
 		if err != nil {
-			fmt.Printf("proxy: error decoding result UDP packet body from %s: %v\n", targetUrl, err)
+			fmt.Printf("%s proxy: error decoding result UDP packet body from %s: %v\n", getNowTimestamp(), targetUrl, err)
 			return
 		}
 
 		// Send it back to the caller
 		err = sendFunc(decodedData)
 		if err != nil {
-			fmt.Printf("proxy: error returning result %d-byte UDP packet body: %v\n", len(decodedData), err)
+			fmt.Printf("%s proxy: error returning result %d-byte UDP packet body: %v\n", getNowTimestamp(), len(decodedData), err)
 			return
 		}
 

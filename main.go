@@ -44,8 +44,9 @@ func main() {
 }
 
 func loggedExit(code int, message ...any) {
+	fmt.Print(getNowTimestamp(), " ")
 	fmt.Println(message...)
-	fmt.Println("Exiting with code", code)
+	fmt.Println(getNowTimestamp(), "Exiting with code", code)
 	os.Stdout.Sync()
 	// If you don't sleep for a bit, the last output may be lost when redirecting to a file
 	time.Sleep(250 * time.Millisecond)
@@ -89,9 +90,9 @@ func inputHandler() {
 
 	err := scanner.Err()
 	if err != nil {
-		fmt.Println("Input handler shutting down due to error", err)
+		fmt.Println(getNowTimestamp(), "Input handler shutting down due to error", err)
 	} else {
-		fmt.Println("Input handler shutting down due to EOF")
+		fmt.Println(getNowTimestamp(), "Input handler shutting down due to EOF")
 	}
 }
 
@@ -108,5 +109,5 @@ func signalHandler() {
 	case syscall.SIGINT, syscall.SIGTERM:
 		exitCode = 0
 	}
-	loggedExit(exitCode, "*** Exiting because of SIGNAL", signal)
+	loggedExit(exitCode, getNowTimestamp(), "*** Exiting because of SIGNAL", signal)
 }
