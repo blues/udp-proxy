@@ -101,7 +101,7 @@ func udpProxyHandler(target string, port string) {
 			}
 
 			if traceIo {
-				fmt.Printf("%s rsp %s %d bytes to %s\n", getNowTimestamp(), port, len(data), addr.String())
+				fmt.Printf("%s %s rsp(%s) %d bytes to %s\n", getNowTimestamp(), addr.String(), port, len(data), addr.String())
 			}
 			_, err = sock.WriteTo(data, ip)
 			if err != nil {
@@ -113,18 +113,18 @@ func udpProxyHandler(target string, port string) {
 
 		// Trace
 		if traceIo {
-			fmt.Printf("%s req %s %d bytes to %s\n", getNowTimestamp(), port, buflen, targetURL)
+			fmt.Printf("%s %s req(%s) %d bytes to %s\n", getNowTimestamp(), addr.String(), port, buflen, targetURL)
 		}
 
 		// Dispatch the handling of a single UDP packet to a target
-		go handlePacket(targetURL, sendFunc, buf[0:buflen])
+		go handlePacket(targetURL, addr, sendFunc, buf[0:buflen])
 
 	}
 
 }
 
 // Handle proxying a single incoming UDP packet
-func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byte) {
+func handlePacket(targetUrl string, addr net.Addr, sendFunc func(data []byte) error, data []byte) {
 
 	// Create a new HTTP request with the hex data as the body
 	req, err := http.NewRequest("POST", targetUrl, bytes.NewBufferString(hex.EncodeToString(data)))
@@ -141,6 +141,10 @@ func handlePacket(targetUrl string, sendFunc func(data []byte) error, data []byt
 		return
 	}
 	defer rsp.Body.Close()
+
+	if traceIo {
+		fmt.Printf("%s %s fwd %d bytes to %s: status %s\n", getNowTimestamp(), addr.String(), len(data), targetUrl, rsp.Status)
+	}
 
 	// Read the response body
 	rspBody, err := io.ReadAll(rsp.Body)
